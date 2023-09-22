@@ -6,13 +6,17 @@ module.exports = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
-	],
+  ],
   theme: {
     container: {
       center: true,
       padding: "2rem",
       screens: {
-        "2xl": "1400px",
+        sm: 576 + 24 + "px",
+        md: 768 + 32 + "px",
+        lg: 960 + 48 + "px",
+        xl: 1152 + 64 + "px",
+        '2xl': 1344 + 64 + "px",
       },
     },
     extend: {
@@ -55,6 +59,9 @@ module.exports = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        '3xl': '0px 10px 40px 5px rgba(0, 0, 0, 0.25)',
       },
       keyframes: {
         "accordion-down": {
