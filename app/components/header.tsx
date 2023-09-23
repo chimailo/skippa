@@ -9,7 +9,7 @@ export default function Header() {
       role="banner"
       className="flex flex-shrink-0 h-14 sm:h-16 border-b border-gray-300"
     >
-      <Container className="flex items-center w-full">
+      <Container className="flex items-center w-full" compact>
         <Link
           className="flex place-items-center gap-2 text-primary font-serif shrink-0 font-bold text-2xl uppercase"
           href="/"
