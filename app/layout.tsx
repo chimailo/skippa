@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { Raleway } from 'next/font/google'
 import Header from '@/app/components/header'
 
-const inter = Raleway({ subsets: ['latin'] })
+const raleway = Raleway({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Home | Skippa - Linq',
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={raleway.className}>
         <Header />
         {children}
       </body>
