@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const nextConfig = {
+  env: {
+    baseUrl: "https://skippa-service.onrender.com/v1",
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

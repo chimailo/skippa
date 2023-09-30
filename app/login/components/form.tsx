@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { signIn } from "next-auth/react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
@@ -17,34 +18,102 @@ import {
   FormLabel,
   FormMessage,
 } from "@/app/components/ui/form";
+import { useToast } from "@/app/components/ui/use-toast";
+import { ToastAction } from "@/app/components/ui/toast";
 import Spinner from "@/app/components/loading";
+import { splitCamelCaseText } from "@/app/utils";
 
-type FormType = z.infer<typeof FormSchema>;
+type FormDataType = z.infer<typeof FormSchema>;
+
+const resendCode = async (email: string) => {
+  const res = await fetch(`/api/merchants/resend-code`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+  const { data } = await res.json();
+
+  return data;
+};
 
 const FormSchema = z.object({
   email: z
     .string()
-    .email({ message: "Invalid email" })
-    .nonempty({ message: "Email is required" }),
+    .nonempty({ message: "Email is required" })
+    .email({ message: "Invalid email" }),
   password: z.string().nonempty({ message: "Password is required" }),
 });
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const form = useForm<FormType>({
+  const form = useForm<FormDataType>({
     resolver: zodResolver(FormSchema),
-    mode: "onSubmit",
-    defaultValues: {
+    mode: "onBlur",
+    values: {
       email: "",
       password: "",
     },
   });
+  const { toast } = useToast();
 
-  function onSubmit(data: FormType) {
-    console.log(data);
-    // router.push(`/signup`)
-    form.reset();
+  async function handleVerifyAccount(email: string, createToken: string) {
+    await resendCode(email);
+    router.push(`/verify-account?createToken=${createToken}&email=${email}`);
+  }
+
+  async function onSubmit(formData: FormDataType) {
+    try {
+      const res = await signIn("credentials", {
+        ...formData,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        const error = JSON.parse(res.error);
+
+        // use `createToken` instead when it is added to the login response
+        // for a that is not yet verified
+        if (error.message === "Complete you signup process") {
+          toast({
+            duration: 1000 * 60 * 5,
+            variant: "destructive",
+            title: splitCamelCaseText(error.name) || undefined,
+            description:
+              error.message ||
+              "There was a problem with your request, please try again",
+            action: (
+              <ToastAction
+                altText="Verify Account"
+                onClick={() =>
+                  handleVerifyAccount(formData.email, error.createToken)
+                }
+              >
+                Verify Account
+              </ToastAction>
+            ),
+          });
+          return;
+        }
+
+        toast({
+          variant: "destructive",
+          title: splitCamelCaseText(error.name) || undefined,
+          description:
+            error.message ||
+            "There was a problem with your request, please try again",
+        });
+        return;
+      }
+
+      form.reset();
+      router.push("/business-verification?page=1");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Ooops..., an error has occured",
+      });
+    }
   }
 
   return (
@@ -84,12 +153,16 @@ export default function LoginForm() {
                       size="sm"
                       variant="ghost"
                       className="hover:bg-gray-100 absolute right-2 top-[1.6rem] z-50"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowPassword(!showPassword);
+                      }}
                     >
                       {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                     </Button>
                   </>
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -102,7 +175,7 @@ export default function LoginForm() {
             </Link>
             <Button
               type="submit"
-              disabled={!form.formState.isValid}
+              disabled={!form.formState.isValid || form.formState.isSubmitting}
               size="lg"
               className="w-full font-bold hover:bg-primary hover:opacity-90 transition-opacity text-lg xl:text-2xl"
             >
