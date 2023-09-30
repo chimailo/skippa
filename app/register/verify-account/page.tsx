@@ -18,7 +18,7 @@ import { useToast } from "@/app/components/ui/use-toast";
 import Spinner from "@/app/components/loading";
 import Container from "@/app/components/container";
 import "./styles.css";
-import { splitCamelCaseText } from "../utils";
+import { splitCamelCaseText } from "@/app/utils";
 
 const TIMEOUT = 60 * 2;
 const LEN_INPUT = 6;
@@ -104,7 +104,9 @@ export default function VerifyAccountForm() {
       setOtp("");
       setTimer(TIMEOUT);
       const token = res.data.accountCreationToken;
-      router.push(`/verify-account?createToken=${token}&email=${email}`);
+      router.push(
+        `/register/verify-account?createToken=${token}&email=${email}`
+      );
     } catch (error) {
       toast({
         variant: "destructive",

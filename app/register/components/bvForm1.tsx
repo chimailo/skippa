@@ -206,7 +206,11 @@ export default function BusinessVerificationForm1({
                 render={({ field }) => (
                   <FormItem className="w-full col-span-2">
                     <FormControl>
-                      <Input type="text" placeholder="Handle" {...field} />
+                      <Input
+                        type="text"
+                        placeholder={`https://${medium}.com/your-handle`}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

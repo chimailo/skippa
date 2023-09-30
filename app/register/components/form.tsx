@@ -152,7 +152,7 @@ export default function SignUpForm() {
 
       form.reset();
       router.push(
-        `/verify-account?token=${res.data.accountCreationToken}&email=${formData.email}`
+        `/register/verify-account?token=${res.data.accountCreationToken}&email=${formData.email}`
       );
     } catch (error) {
       toast({
