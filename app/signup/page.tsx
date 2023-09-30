@@ -1,10 +1,21 @@
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+
 import Container from "@/app/components/container";
 import Footer from "@/app/components/footer";
 import WhySkippa from "@/app/components/whyskippa";
 import SignUpForm from "@/app/signup/components/form";
 import HeroText from "@/app/signup/components/hero";
+import { authOptions } from "../api/auth/[...nextauth]/options";
 
-export default function Signup() {
+export default async function Signup() {
+  const session = await getServerSession(authOptions);
+  console.log(session);
+
+  if (session?.user?.email) {
+    redirect("/business-verification");
+  }
+
   return (
     <>
       <main className="flex flex-col items-center justify-between">

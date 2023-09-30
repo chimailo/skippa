@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,9 +18,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/app/components/ui/form";
+import { useToast } from "@/app/components/ui/use-toast";
 import Spinner from "@/app/components/loading";
+import { splitCamelCaseText } from "@/app/utils";
 
-type FormType = z.infer<typeof FormSchema>;
+export type FormDataType = z.infer<typeof FormSchema>;
 
 const FormSchema = z
   .object({
@@ -33,16 +36,16 @@ const FormSchema = z
       .nonempty({ message: "Last Name is required" })
       .min(2, "Last Name must be at least 2 characters long")
       .max(64, "Last Name cannot be more than 64 characters long"),
-    businessName: z
+    companyName: z
       .string()
       .min(2, "Business Name must be at least 2 characters long")
       .max(64, "Business Name cannot be more than 64 characters long")
       .nonempty({ message: "Business Name is required" }),
-    companyEmail: z
+    email: z
       .string()
       .nonempty({ message: "Email is required" })
       .email({ message: "Invalid email" }),
-    phone: z
+    mobile: z
       .string()
       .length(11, "Phone number must be of length 11 digits")
       .nonempty({ message: "Phone number is required" }),
@@ -71,10 +74,11 @@ const FormSchema = z
             message: "Password must contain at least a uppercase letter",
           });
         }
-        if (!/[!@#$%^&*?}{'><.,;~/`)(+=._-]/.test(val)) {
+        if (!/[!@#$%&*]/.test(val)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Password must contain at least a special character",
+            message:
+              "Password must contain at least a special character !@#$%&*",
           });
         }
       }),
@@ -91,17 +95,30 @@ const FormSchema = z
     path: ["confirmPassword"],
   });
 
+const createMerchant = async (
+  formData: Omit<FormDataType, "terms"> & { type: string | null }
+) => {
+  const res = await fetch(`/api/merchants/create`, {
+    method: "POST",
+    body: JSON.stringify(formData),
+  });
+  const { data } = await res.json();
+
+  return data;
+};
+
 export default function SignUpForm() {
   const router = useRouter();
-  const form = useForm<FormType>({
+  const search = useSearchParams();
+  const form = useForm<FormDataType>({
     resolver: zodResolver(FormSchema),
     mode: "onBlur",
     values: {
       firstName: "",
       lastName: "",
-      businessName: "",
-      companyEmail: "",
-      phone: "",
+      companyName: "",
+      email: "",
+      mobile: "",
       country: "Nigeria",
       state: "",
       password: "",
@@ -109,12 +126,41 @@ export default function SignUpForm() {
       terms: false,
     },
   });
+  const { toast } = useToast();
+  const type = search.get("type");
 
-  function onSubmit(data: FormType) {
-    console.log(data);
-    // router.push(`/signup`)
-    form.reset();
-    router.push(`/verify-account?email=${data.companyEmail}`);
+  if (!type) {
+    router.push("/");
+    return;
+  }
+
+  async function onSubmit(formData: FormDataType) {
+    try {
+      const { terms, ...rest } = formData;
+      const res = await createMerchant({ ...rest, type });
+
+      if (!res.success) {
+        toast({
+          variant: "destructive",
+          title: splitCamelCaseText(res.name) || undefined,
+          description:
+            res.data[0].message ||
+            "An error occured while creating you account, please try again",
+        });
+        return;
+      }
+
+      form.reset();
+      router.push(
+        `/verify-account?token=${res.data.accountCreationToken}&email=${formData.email}`
+      );
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Ooops..., an error has occured",
+      });
+    }
   }
 
   return (
@@ -158,7 +204,7 @@ export default function SignUpForm() {
           </div>
           <FormField
             control={form.control}
-            name="businessName"
+            name="companyName"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="">Business Name</FormLabel>
@@ -171,7 +217,7 @@ export default function SignUpForm() {
           />
           <FormField
             control={form.control}
-            name="companyEmail"
+            name="email"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="">Company Email</FormLabel>
@@ -184,7 +230,7 @@ export default function SignUpForm() {
           />
           <FormField
             control={form.control}
-            name="phone"
+            name="mobile"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="">Phone Number</FormLabel>
@@ -230,7 +276,7 @@ export default function SignUpForm() {
               <FormItem className="relative">
                 <FormLabel className="">Password</FormLabel>
                 <FormControl className="flex items-center gap-3">
-                  <Input {...field} />
+                  <Input type="password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -243,7 +289,7 @@ export default function SignUpForm() {
               <FormItem className="relative">
                 <FormLabel className="">Confirm Password</FormLabel>
                 <FormControl className="flex items-center gap-3">
-                  <Input {...field} />
+                  <Input type="password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -281,12 +327,12 @@ export default function SignUpForm() {
           <div className="space-y-4">
             <Button
               type="submit"
-              disabled={!form.formState.isValid}
+              disabled={form.formState.isSubmitting}
               size="lg"
               className="w-full font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
             >
               Submit
-              {form.formState.isSubmitting && (
+              {form.formState.isSubmitted && (
                 <Spinner
                   twColor="text-white before:bg-white"
                   twSize="w-4 h-4"
