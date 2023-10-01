@@ -21,7 +21,7 @@ type FormDataType = UseFormReturn<
       facebook: string;
       instagram: string;
     };
-    deliveryCategory: string[];
+    deliveryCategory: [string, ...string[]];
     bankAccountDetail: {
       bankName: string;
       accountNumber: string;
@@ -157,10 +157,7 @@ export default function BusinessVerificationForm1({
             name="bankAccountDetail.bankName"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="">
-                  Bank Name
-                  <span className="text-red-600 text-xl">*</span>
-                </FormLabel>
+                <FormLabel className="">Bank Name</FormLabel>
                 <FormControl>
                   <Input type="text" {...field} />
                 </FormControl>
@@ -173,10 +170,7 @@ export default function BusinessVerificationForm1({
             name="bankAccountDetail.accountNumber"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="">
-                  Bank Accont No.
-                  <span className="text-red-600 text-xl">*</span>
-                </FormLabel>
+                <FormLabel className="">Bank Accont No.</FormLabel>
                 <FormControl>
                   <Input type="text" {...field} />
                 </FormControl>
@@ -186,8 +180,11 @@ export default function BusinessVerificationForm1({
           />
         </div>
         <div className="space-y-6 md:space-y-8">
-          <h2 className="font-semibold text-sm">Social Media</h2>
-          {SOC_MEDIA_TYPES.map((medium) => (
+          <h2 className="font-semibold text-sm">
+            Social Media
+            <span className="text-red-600 text-xl">*</span>
+          </h2>
+          {/* {SOC_MEDIA_TYPES.map((medium) => (
             <div key={medium} className="grid grid-cols-3 gap-2">
               <FormItem className="w-full">
                 <FormControl>
@@ -200,24 +197,59 @@ export default function BusinessVerificationForm1({
                 </FormControl>
                 <FormMessage />
               </FormItem>
-              <FormField
-                control={form.control}
-                name={`socialMedia${medium}`}
-                render={({ field }) => (
-                  <FormItem className="w-full col-span-2">
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder={`https://${medium}.com/your-handle`}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
-          ))}
+          ))} */}
+          <FormField
+            control={form.control}
+            name="socialMedia.twitter"
+            render={({ field }) => (
+              <FormItem className="w-full col-span-2">
+                <FormLabel className="">Twitter</FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    placeholder={`https://twitter.com/your-handle`}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="socialMedia.facebook"
+            render={({ field }) => (
+              <FormItem className="w-full col-span-2">
+                <FormLabel className="">Facebook</FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    placeholder={`https://facebook.com/your-handle`}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="socialMedia.instagram"
+            render={({ field }) => (
+              <FormItem className="w-full col-span-2">
+                <FormLabel className="">Instagram</FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    placeholder={`https://instagram.com/your-handle`}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </div>
     </>

@@ -27,7 +27,7 @@ type FormDataType = UseFormReturn<
       facebook: string;
       instagram: string;
     };
-    deliveryCategory: string[];
+    deliveryCategory: [string, ...string[]];
     bankAccountDetail: {
       bankName: string;
       accountNumber: string;
@@ -71,7 +71,7 @@ export default function BusinessVerificationForm2({
             <FormItem className="w-full">
               <FormLabel className="">
                 First Name
-                <span className="text-red-600 text-xs">*</span>
+                <span className="text-red-600 text-xl">*</span>
               </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
@@ -87,7 +87,7 @@ export default function BusinessVerificationForm2({
             <FormItem className="w-full">
               <FormLabel className="">
                 Last Name
-                <span className="text-red-600 text-xs">*</span>
+                <span className="text-red-600 text-xl">*</span>
               </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
@@ -132,7 +132,7 @@ export default function BusinessVerificationForm2({
             <FormItem className="w-full">
               <FormLabel className="">
                 ID Number
-                <span className="text-red-600 text-xs">*</span>
+                <span className="text-red-600 text-xl">*</span>
               </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
@@ -179,7 +179,7 @@ export default function BusinessVerificationForm2({
             <FormItem className="w-full">
               <FormLabel className="">
                 Landmark
-                <span className="text-red-600 text-xs">*</span>
+                <span className="text-red-600 text-xl">*</span>
               </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
@@ -198,7 +198,7 @@ export default function BusinessVerificationForm2({
               <FormItem className="w-full">
                 <FormLabel className="">
                   Building Number
-                  <span className="text-red-600 text-xs">*</span>
+                  <span className="text-red-600 text-xl">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input type="text" {...field} />
@@ -214,7 +214,7 @@ export default function BusinessVerificationForm2({
               <FormItem className="w-full col-span-2">
                 <FormLabel className="">
                   Street
-                  <span className="text-red-600 text-xs">*</span>
+                  <span className="text-red-600 text-xl">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input type="text" {...field} />
@@ -245,7 +245,7 @@ export default function BusinessVerificationForm2({
               <FormItem className="w-full">
                 <FormLabel className="">
                   LGA
-                  <span className="text-red-600 text-xs">*</span>
+                  <span className="text-red-600 text-xl">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input type="text" {...field} />
@@ -264,7 +264,7 @@ export default function BusinessVerificationForm2({
             <FormItem className="w-full">
               <FormLabel className="">
                 State
-                <span className="text-red-600 text-xs">*</span>
+                <span className="text-red-600 text-xl">*</span>
               </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
@@ -280,7 +280,7 @@ export default function BusinessVerificationForm2({
             <FormItem className="w-full col-span-2">
               <FormLabel className="">
                 Country
-                <span className="text-red-600 text-xs">*</span>
+                <span className="text-red-600 text-xl">*</span>
               </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
