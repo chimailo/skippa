@@ -56,12 +56,20 @@ export default function LoginForm() {
   });
   const { toast } = useToast();
 
-  async function handleVerifyAccount(email: string, createToken: string) {
-    await resendCode(email);
+  async function handleVerifyAccount(form: FormDataType, createToken?: string) {
+    await resendCode(form.email);
+    // Create cookie with the user login credentials to use to log
+    // them in when they verify their account
+    saveToCookie("password", form.password);
     router.push(
-      `/register/verify-account?createToken=${createToken}&email=${email}`
+      `/register/verify-account?createToken=${createToken}&email=${form.email}`
     );
   }
+
+  const saveToCookie = (name: string, payload: string) => {
+    const encodePayload = btoa(payload);
+    document.cookie = `${name}=${encodePayload}; max-age=120;`;
+  };
 
   async function onSubmit(formData: FormDataType) {
     try {
@@ -74,10 +82,10 @@ export default function LoginForm() {
         const error = JSON.parse(res.error);
 
         // use `createToken` instead when it is added to the login response
-        // for a that is not yet verified
+        // for an account that is not yet verified
         if (error.message === "Complete you signup process") {
           toast({
-            duration: 1000 * 60 * 5,
+            duration: 1000 * 60 * 2,
             variant: "destructive",
             title: splitCamelCaseText(error.name) || undefined,
             description:
@@ -86,9 +94,7 @@ export default function LoginForm() {
             action: (
               <ToastAction
                 altText="Verify Account"
-                onClick={() =>
-                  handleVerifyAccount(formData.email, error.createToken)
-                }
+                onClick={() => handleVerifyAccount(formData, error.createToken)}
               >
                 Verify Account
               </ToastAction>
@@ -108,7 +114,7 @@ export default function LoginForm() {
       }
 
       form.reset();
-      router.push("/register/verify-business-?page=1");
+      router.push("/register/verify-business?page=1");
     } catch (error) {
       toast({
         variant: "destructive",

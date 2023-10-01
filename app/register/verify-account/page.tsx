@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import OTPInput from "react-otp-input";
 
 import { Button } from "@/app/components/ui/button";
@@ -17,8 +18,10 @@ import { Input } from "@/app/components/ui/input";
 import { useToast } from "@/app/components/ui/use-toast";
 import Spinner from "@/app/components/loading";
 import Container from "@/app/components/container";
-import "./styles.css";
 import { splitCamelCaseText } from "@/app/utils";
+import "./styles.css";
+import { ToastAction } from "@/app/components/ui/toast";
+import Link from "next/link";
 
 const TIMEOUT = 60 * 2;
 const LEN_INPUT = 6;
@@ -46,6 +49,7 @@ const resendCode = async (email: string | null) => {
     body: JSON.stringify({ email }),
   });
   const { data } = await res.json();
+  console.log(data);
 
   return data;
 };
@@ -94,7 +98,7 @@ export default function VerifyAccountForm() {
       if (!res.success) {
         toast({
           variant: "destructive",
-          title: res.name.split(/(?=[A-Z]+|[0-9]+)/).join(" ") || undefined,
+          title: splitCamelCaseText(res.name) || undefined,
           description:
             res.data[0].message || "An error occured while resending otp",
         });
@@ -104,9 +108,7 @@ export default function VerifyAccountForm() {
       setOtp("");
       setTimer(TIMEOUT);
       const token = res.data.accountCreationToken;
-      router.push(
-        `/register/verify-account?createToken=${token}&email=${email}`
-      );
+      router.push(`/register/verify-account?token=${token}&email=${email}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -118,6 +120,21 @@ export default function VerifyAccountForm() {
     }
   };
 
+  const readFromCookie = () => {
+    const encodedCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("password="))
+      ?.split("=")[1];
+
+    if (encodedCookie) return atob(encodedCookie);
+    return null;
+  };
+
+  const saveToCookie = (name: string, payload: string) => {
+    const encodePayload = btoa(payload);
+    document.cookie = `${name}=${encodePayload}; expires=SAT, 30 SEPT 2023 23:59:59 GMT;`;
+  };
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -125,7 +142,7 @@ export default function VerifyAccountForm() {
     try {
       const res = await verifyAccount({
         otp,
-        token: search.get("createToken"),
+        token: search.get("token"),
       });
 
       if (!res.success) {
@@ -133,14 +150,53 @@ export default function VerifyAccountForm() {
           variant: "destructive",
           title: splitCamelCaseText(res.name) || undefined,
           description:
-            res.data.message ||
+            res.message ||
             "An error occured during otp verification, please try again",
         });
         return;
       }
 
+      // Read cookie to get the user login credentials
+      const password = readFromCookie();
+
+      if (!password) {
+        toast({
+          duration: 1000 * 60 * 69,
+          variant: "destructive",
+          title: "Session Error",
+          description: "Your previous session has expired, you need to login",
+          action: (
+            <ToastAction asChild altText="Login">
+              <Link href="/login">Login</Link>
+              Login
+            </ToastAction>
+          ),
+        });
+        return;
+      }
+      const login = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (login?.error) {
+        const error = JSON.parse(login.error);
+        toast({
+          variant: "destructive",
+          title: splitCamelCaseText(error.name) || undefined,
+          description:
+            error.message ||
+            "There was a problem with your request, please try again",
+        });
+        return;
+      }
+
+      // Delete the cookie when signin is successful
+      saveToCookie("password", password);
+
       setOtp("");
-      router.push(`/business-verification?page=1`);
+      router.push(`/register/verify-business?page=1`);
     } catch (error) {
       let desc =
         typeof error === "object" &&

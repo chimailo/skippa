@@ -16,7 +16,7 @@ export const authOptions: NextAuthOptions = {
             JSON.stringify({
               name: data.name,
               message: data.message,
-              // createToken: data.data?.customerAccountCreationToken,
+              createToken: data.data?.customerAccountCreationToken,
             })
           );
         }
@@ -44,10 +44,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }: any) {
       if (token) {
-        session.accessToken = token.accessToken;
-        session.createToken = token.createToken;
-        session.role = token.role;
-        session.status = token.status;
+        session.token = token.accessToken;
+        session.user.role = token.role;
+        session.user.status = token.status;
       }
       return session;
     },

@@ -98,9 +98,11 @@ const FormSchema = z
 const createMerchant = async (
   formData: Omit<FormDataType, "terms"> & { type: string | null }
 ) => {
+  const { companyName, ...form } = formData;
+  const body = formData.type === "business" ? formData : form;
   const res = await fetch(`/api/merchants/create`, {
     method: "POST",
-    body: JSON.stringify(formData),
+    body: JSON.stringify(body),
   });
   const { data } = await res.json();
 
@@ -134,6 +136,11 @@ export default function SignUpForm() {
     return;
   }
 
+  const saveToCookie = (name: string, payload: string) => {
+    const encodePayload = btoa(payload);
+    document.cookie = `${name}=${encodePayload}; max-age=3600;`;
+  };
+
   async function onSubmit(formData: FormDataType) {
     try {
       const { terms, ...rest } = formData;
@@ -142,14 +149,20 @@ export default function SignUpForm() {
       if (!res.success) {
         toast({
           variant: "destructive",
+          duration: 1000 * 60,
           title: splitCamelCaseText(res.name) || undefined,
           description:
-            res.data[0].message ||
-            "An error occured while creating you account, please try again",
+            (res.name === "validationError"
+              ? res.data[0].message
+              : res.message) ||
+            "An error occured while creating your account, please try again",
         });
         return;
       }
 
+      // Create cookie with the user login credentials to use to log
+      // them in when they verify their account
+      saveToCookie("password", formData.password);
       form.reset();
       router.push(
         `/register/verify-account?token=${res.data.accountCreationToken}&email=${formData.email}`
@@ -332,7 +345,7 @@ export default function SignUpForm() {
               className="w-full font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
             >
               Submit
-              {form.formState.isSubmitted && (
+              {form.formState.isSubmitting && (
                 <Spinner
                   twColor="text-white before:bg-white"
                   twSize="w-4 h-4"

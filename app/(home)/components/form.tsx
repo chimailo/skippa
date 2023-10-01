@@ -35,7 +35,7 @@ export default function BusinessTypeForm() {
   });
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    router.push(`/signup?type=${data.type}`);
+    router.push(`/register?type=${data.type}`);
     form.reset();
   }
 
