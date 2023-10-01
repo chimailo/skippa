@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { redirect, useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -149,13 +148,6 @@ export default function VerifyBusinessForm() {
     values: initialValues as unknown as FormDataType,
   });
   const { toast } = useToast();
-  const session = useSession({
-    required: true,
-    onUnauthenticated() {
-      redirect("/login?callback=/register/verify-business?page=1");
-    },
-  });
-  console.log(form.formState.errors);
 
   async function onSubmit(formData: FormDataType) {
     try {
