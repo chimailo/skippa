@@ -13,7 +13,7 @@ export default function ForgotPassword() {
           <ForgotPasswordForm />
         </Container>
       </main>
-      <Footer />
+      <Footer bg="light" />
     </>
   );
 }

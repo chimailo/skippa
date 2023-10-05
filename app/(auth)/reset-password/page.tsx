@@ -13,7 +13,7 @@ export default function ResetPassword() {
           <ResetPasswordForm />
         </Container>
       </main>
-      <Footer />
+      <Footer bg="light" />
     </>
   );
 }

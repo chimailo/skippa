@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 import Container from "@/app/components/container";
+import { cn } from "../utils";
 
 const companyItems = [
   { label: "Service Portfolio", link: "/portfolio" },
@@ -17,9 +17,11 @@ const contact = [
   { icon: Linkedin, link: "linkedin.com" },
 ];
 
-export default function Footer() {
+export default function Footer(props: { bg?: "light" | "dark" }) {
+  const bg = props.bg === "light" ? "bg-primary" : "bg-primary-dark";
+
   return (
-    <footer className="py-8 bg-primary-dark text-slate-100 w-full">
+    <footer className={cn("py-8 text-slate-100 w-full", bg)}>
       <Container
         compact
         className="grid sm:grid-flow-col sm:auto-cols-fr gap-6 mx-auto max-w-5xl"

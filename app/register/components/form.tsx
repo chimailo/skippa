@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Input } from "@/app/components/ui/input";
@@ -38,23 +40,23 @@ const FormSchema = z
       .max(64, "Last Name cannot be more than 64 characters long"),
     companyName: z
       .string()
+      // .nonempty({ message: "Business Name is required" })
       .min(2, "Business Name must be at least 2 characters long")
-      .max(64, "Business Name cannot be more than 64 characters long")
-      .nonempty({ message: "Business Name is required" }),
+      .max(64, "Business Name cannot be more than 64 characters long"),
     email: z
       .string()
       .nonempty({ message: "Email is required" })
       .email({ message: "Invalid email" }),
     mobile: z
       .string()
-      .length(11, "Phone number must be of length 11 digits")
-      .nonempty({ message: "Phone number is required" }),
+      .nonempty({ message: "Phone number is required" })
+      .length(11, "Phone number must be of length 11 digits"),
     country: z.string().nonempty({ message: "Country is required" }),
     state: z.string().nonempty({ message: "State is required" }),
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters long")
       .nonempty({ message: "Password is required" })
+      .min(8, "Password must be at least 8 characters long")
       .superRefine((val, ctx) => {
         if (!/\d/.test(val)) {
           ctx.addIssue({
@@ -110,6 +112,8 @@ const createMerchant = async (
 };
 
 export default function SignUpForm() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const search = useSearchParams();
   const form = useForm<FormDataType>({
@@ -215,19 +219,21 @@ export default function SignUpForm() {
               )}
             />
           </div>
-          <FormField
-            control={form.control}
-            name="companyName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="">Business Name</FormLabel>
-                <FormControl>
-                  <Input type="text" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {type === "individual" && (
+            <FormField
+              control={form.control}
+              name="companyName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="">Business Name</FormLabel>
+                  <FormControl>
+                    <Input type="text" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           <FormField
             control={form.control}
             name="email"
@@ -289,12 +295,29 @@ export default function SignUpForm() {
               <FormItem className="relative">
                 <FormLabel className="">Password</FormLabel>
                 <FormControl className="flex items-center gap-3">
-                  <Input type="password" {...field} />
+                  <>
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      {...field}
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="hover:bg-gray-100 absolute right-2 top-[1.6rem] z-50"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowPassword(!showPassword);
+                      }}
+                    >
+                      {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </Button>
+                  </>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          <FormControl className="flex items-center gap-3"></FormControl>
           <FormField
             control={form.control}
             name="confirmPassword"
@@ -302,7 +325,27 @@ export default function SignUpForm() {
               <FormItem className="relative">
                 <FormLabel className="">Confirm Password</FormLabel>
                 <FormControl className="flex items-center gap-3">
-                  <Input type="password" {...field} />
+                  <>
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      {...field}
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="hover:bg-gray-100 absolute right-2 top-[1.6rem] z-50"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowConfirmPassword(!showConfirmPassword);
+                      }}
+                    >
+                      {showConfirmPassword ? (
+                        <Eye size={18} />
+                      ) : (
+                        <EyeOff size={18} />
+                      )}
+                    </Button>
+                  </>
                 </FormControl>
                 <FormMessage />
               </FormItem>

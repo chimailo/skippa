@@ -91,15 +91,8 @@ export default function LoginForm() {
             description:
               error.message ||
               "There was a problem with your request, please try again",
-            action: (
-              <ToastAction
-                altText="Verify Account"
-                onClick={() => handleVerifyAccount(formData, error.createToken)}
-              >
-                Verify Account
-              </ToastAction>
-            ),
           });
+          handleVerifyAccount(formData, error.createToken);
           return;
         }
 

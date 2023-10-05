@@ -119,7 +119,7 @@ export default function ForgotPasswordForm() {
             size="lg"
             className="w-full font-bold hover:bg-primary hover:opacity-90 transition-opacity text-lg xl:text-2xl"
           >
-            Log In
+            Submit
             {form.formState.isSubmitting && (
               <Spinner
                 twColor="text-white before:bg-white"

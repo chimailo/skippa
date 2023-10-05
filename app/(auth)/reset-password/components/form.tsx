@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -14,9 +16,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/app/components/ui/form";
+import { useToast } from "@/app/components/ui/use-toast";
 import Spinner from "@/app/components/loading";
 import { splitCamelCaseText } from "@/app/utils";
-import { useToast } from "@/app/components/ui/use-toast";
 
 type FormType = z.infer<typeof FormSchema>;
 
@@ -72,6 +74,8 @@ const resetPassword = async (formData: FormType & { token: string | null }) => {
 };
 
 export default function ForgotPasswordForm() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     mode: "onBlur",
@@ -128,7 +132,23 @@ export default function ForgotPasswordForm() {
               <FormItem className="relative">
                 <FormLabel className="">Password</FormLabel>
                 <FormControl className="flex items-center gap-3">
-                  <Input {...field} />
+                  <>
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      {...field}
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="hover:bg-gray-100 absolute right-2 top-[1.6rem] z-50"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowPassword(!showPassword);
+                      }}
+                    >
+                      {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </Button>
+                  </>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -141,7 +161,27 @@ export default function ForgotPasswordForm() {
               <FormItem className="relative">
                 <FormLabel className="">Confirm Password</FormLabel>
                 <FormControl className="flex items-center gap-3">
-                  <Input {...field} />
+                  <>
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      {...field}
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="hover:bg-gray-100 absolute right-2 top-[1.6rem] z-50"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowConfirmPassword(!showConfirmPassword);
+                      }}
+                    >
+                      {showConfirmPassword ? (
+                        <Eye size={18} />
+                      ) : (
+                        <EyeOff size={18} />
+                      )}
+                    </Button>
+                  </>
                 </FormControl>
                 <FormMessage />
               </FormItem>
