@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,18 +15,17 @@ import BusinessVerificationForm2 from "@/app/register/components/bvForm2";
 import { splitCamelCaseText } from "@/app/utils";
 
 type FormDataType = z.infer<typeof FormSchema>;
-export interface SocMedia {
-  name: "twitter" | "facebook" | "instagram";
-  handle: string;
-}
 
 const NUM_OF_FORM_PAGES = 2;
 const initialValues = {
   billingEmail: "",
-  supportEmail: "",
   tin: "",
   registrationNumber: "",
-  // socialMedia: {},
+  socialMedia: {
+    twitter: "",
+    facebook: "",
+    instagram: "",
+  },
   deliveryCategory: [],
   bankAccountDetail: {
     bankName: "",
@@ -35,9 +34,9 @@ const initialValues = {
   directorDetail: {
     idNumber: "",
     idType: "",
+    image: "",
     firstName: "",
     lastName: "",
-    dob: "",
   },
   addressDetail: {
     flatNumber: "",
@@ -57,7 +56,6 @@ const FormSchema = z.object({
     .string()
     .nonempty({ message: "Billing Email is required" })
     .email({ message: "Invalid email" }),
-  supportEmail: z.string().email({ message: "Invalid email" }),
   tin: z
     .string()
     .nonempty({ message: "Tax Identification Number is required" })
@@ -75,6 +73,11 @@ const FormSchema = z.object({
     .string()
     .array()
     .nonempty("You have to select at least one item."),
+  socialMedia: z.object({
+    twitter: z.string().url("Invalid url").includes("twitter"),
+    facebook: z.string().url("Invalid url").includes("facebook"),
+    instagram: z.string().url("Invalid url").includes("instagram"),
+  }),
   bankAccountDetail: z.object({
     bankName: z.string(),
     accountNumber: z.string(),
@@ -96,9 +99,7 @@ const FormSchema = z.object({
       .nonempty({ message: "Last Name is required" })
       .min(2, "Last Name must be at least 2 characters long")
       .max(64, "Last Name cannot be more than 64 characters"),
-    dob: z.date({
-      required_error: "Date of birth is required.",
-    }),
+    image: z.string(),
   }),
   addressDetail: z.object({
     flatNumber: z.string(),
@@ -123,22 +124,12 @@ const verifyBusiness = async (formData: FormDataType) => {
   const { deliveryCategory, ...rest } = formData;
   const category = {
     bike: deliveryCategory.includes("motorcycle"),
-    car: deliveryCategory.includes("car"),
+    minivan: deliveryCategory.includes("car"),
     van: deliveryCategory.includes("van"),
-    truck: deliveryCategory.includes("truck"),
   };
-  const directorDetail = {
-    ...formData.directorDetail,
-    dob: new Date(formData.directorDetail.dob).toISOString(),
-  };
-  console.log({ ...rest, category, directorDetail });
-
   const res = await fetch(`/api/merchants/verify-business`, {
     method: "POST",
     body: JSON.stringify({ ...rest, category }),
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
   });
   const { data } = await res.json();
 
@@ -146,46 +137,36 @@ const verifyBusiness = async (formData: FormDataType) => {
 };
 
 export default function VerifyBusinessForm() {
-  const [page, setPage] = useState(1);
-  const [imgFile, setImgFile] = useState<File>();
-  const [socialMedia, setSocialMedia] = useState<Record<string, SocMedia>>({});
+  const search = useSearchParams();
+  const getPage = Number(search.get("page") || 1);
 
+  const [page, setPage] = useState(getPage);
   const router = useRouter();
   const form = useForm<FormDataType>({
     resolver: zodResolver(FormSchema),
     mode: "onBlur",
-    defaultValues: initialValues as unknown as FormDataType,
+    values: initialValues as unknown as FormDataType,
   });
   const { toast } = useToast();
 
   async function onSubmit(formData: FormDataType) {
     try {
-      const data = {
-        ...formData,
-        directorDetail: { ...formData.directorDetail, image: imgFile },
-        socialMedia: Object.assign(
-          {},
-          ...Object.values(socialMedia).map(({ name, handle }) => ({
-            [name]: handle,
-          }))
-        ),
-      };
+      console.log(formData);
+      const res = await verifyBusiness(formData);
 
-      const res = await verifyBusiness(data);
+      if (!res.success) {
+        toast({
+          variant: "destructive",
+          title: splitCamelCaseText(res.name) || undefined,
+          description:
+            res.data[0].message ||
+            "There was a problem with your request, please try again",
+        });
+        return;
+      }
 
-      // if (!res.success) {
-      //   toast({
-      //     variant: "destructive",
-      //     title: splitCamelCaseText(res.name) || undefined,
-      //     description:
-      //       res.data[0].message ||
-      //       "There was a problem with your request, please try again",
-      //   });
-      //   return;
-      // }
-
-      // form.reset();
-      // router.push("/dashboard");
+      form.reset();
+      router.push("/dashboard");
     } catch (error) {
       toast({
         variant: "destructive",
@@ -208,21 +189,14 @@ export default function VerifyBusinessForm() {
             className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
           >
             {page === 1 ? (
-              <BusinessVerificationForm1
-                form={form}
-                setFile={setImgFile}
-                imgFile={imgFile}
-              />
+              <BusinessVerificationForm1 form={form} />
             ) : (
-              <BusinessVerificationForm2
-                form={form}
-                setSocMedia={setSocialMedia}
-                socMedia={socialMedia}
-              />
+              <BusinessVerificationForm2 form={form} />
             )}
             <div className="my-4 flex justify-between items-center flex-row-reverse">
               {page === NUM_OF_FORM_PAGES ? (
                 <Button
+                  type="submit"
                   disabled={
                     form.formState.isSubmitting || !form.formState.isValid
                   }
