@@ -26,3 +26,22 @@ export const validatePassport = (file: File) => {
     return `Passport must not be larger than 1mb`;
   }
 };
+
+export const validatePaper = (file: File) => {
+  const MAX_FILE_SIZE = 1024 * 1024;
+  const ACCEPTED_MIME_TYPES = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+  ];
+
+  if (ACCEPTED_MIME_TYPES.every((type) => file.type !== type)) {
+    return `Only .jpg, .jpeg, .png .webp and .pdf files are accepted.`;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return `Passport must not be larger than 1mb`;
+  }
+};
