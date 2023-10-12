@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { SocMedia } from "../verify-business/page";
+import { SocMedia } from "../../page";
 import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 
@@ -60,7 +60,6 @@ type Props = {
 };
 
 const CATEGORIES = ["motorcycle", "car", "van", "truck"];
-const SOC_MEDIA_TYPES = ["twitter", "facebook", "instagram"];
 
 export default function BusinessVerificationForm2({
   form,

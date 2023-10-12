@@ -19,7 +19,6 @@ import {
   FormMessage,
 } from "@/app/components/ui/form";
 import { useToast } from "@/app/components/ui/use-toast";
-import { ToastAction } from "@/app/components/ui/toast";
 import Spinner from "@/app/components/loading";
 import { splitCamelCaseText } from "@/app/utils";
 
@@ -107,7 +106,7 @@ export default function LoginForm() {
       }
 
       form.reset();
-      router.push("/register/verify-business?page=1");
+      router.push("/onboarding");
     } catch (error) {
       toast({
         variant: "destructive",

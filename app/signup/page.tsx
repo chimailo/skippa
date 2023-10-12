@@ -4,16 +4,16 @@ import { getServerSession } from "next-auth";
 import Container from "@/app/components/container";
 import Footer from "@/app/components/footer";
 import WhySkippa from "@/app/components/whyskippa";
-import SignUpForm from "@/app/register/components/form";
-import HeroText from "@/app/register/components/hero";
-import { authOptions } from "../api/auth/[...nextauth]/options";
+import SignUpForm from "@/app/signup/components/form";
+import HeroText from "@/app/signup/components/hero";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
 export default async function Signup() {
   const session = await getServerSession(authOptions);
 
   if (session?.user?.email) {
     // Check the user's session to determine where to redirect to
-    redirect("/register/verify-business");
+    redirect("/onboarding/business");
   }
 
   return (
