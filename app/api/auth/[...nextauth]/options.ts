@@ -38,15 +38,13 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = user.accessToken;
         token.createToken = user.createToken;
         token.role = user.role;
-        token.status = user.status;
       }
       return token;
     },
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       if (token) {
         session.token = token.accessToken;
         session.user.role = token.role;
-        session.user.status = token.status;
       }
       return session;
     },
