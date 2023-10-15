@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { UseFormReturn } from "react-hook-form";
 import { CalendarIcon, Edit2, Plus, Upload, X } from "lucide-react";
 import { format } from "date-fns";
@@ -19,15 +20,25 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/app/components/ui/popover";
-import { cn, validatePaper, validatePassport } from "@/app/utils";
+import {
+  cn,
+  dobRange,
+  splitCamelCaseText,
+  validatePaper,
+  validatePassport,
+} from "@/app/utils";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import { Papers } from "../../page";
+import { useToast } from "@/app/components/ui/use-toast";
+import { useSession } from "next-auth/react";
+import Spinner from "@/app/components/loading";
 
-type FormData = UseFormReturn<
+type FormDataType = UseFormReturn<
   {
     vehicleNumber: string;
     driversLicense: string;
     dateOfBirth: Date;
+    passport?: string;
+    vehiclePapers?: string[];
     guarantorDetail: {
       lastName: string;
       firstName: string;
@@ -55,27 +66,79 @@ type FormData = UseFormReturn<
 >;
 
 type Props = {
-  form: FormData;
-  setFile: React.Dispatch<React.SetStateAction<File | undefined>>;
-  imgFile?: File;
-  setPapers: React.Dispatch<React.SetStateAction<Papers[]>>;
-  papers: Papers[];
+  form: FormDataType;
 };
 
 const CATEGORIES = ["motorcycle", "car", "van", "truck"];
 
-export default function BusinessVerificationForm1(props: Props) {
-  const { form, papers, setPapers, imgFile, setFile } = props;
-  const [passport, setPassport] = useState<string>();
+function passportLoader({ src, width }: { src: string; width: number }) {
+  const params = ["c_scale", "f_auto", `w_${width}`, "q_auto"];
+  return `https://res.cloudinary.com/drgtk7a9s/image/upload/${params.join(
+    ","
+  )}${src}`;
+}
+
+const uploadFiles = async (file: FormData) => {
+  return await fetch(`/api/uploads`, {
+    method: "POST",
+    body: file,
+  });
+};
+
+const deleteFiles = async (id: string) => {
+  return await fetch(`/api/uploads`, {
+    method: "PUT",
+    body: JSON.stringify({ id }),
+  });
+};
+
+export default function BusinessVerificationForm1({ form }: Props) {
+  const [isPaperUploading, setPaperUploading] = useState(false);
+  const [isImageUploading, setImageUploading] = useState(false);
+  const [passport, setPassport] = useState<Record<string, string>>();
   const [passportError, setPassportError] = useState<string>();
-  const [vPapers, setVPapers] = useState<File[]>([]);
+  const [vPapers, setVPapers] = useState<Record<string, string>[]>([]);
   const [vPapersError, setVPaperError] = useState<string>();
 
-  const dateTo = new Date().getFullYear() - 18;
-  const dateFrom = new Date().getFullYear() - 70;
-  const defaultMonth = new Date(dateTo, new Date().getMonth());
+  const session = useSession();
+  const { toast } = useToast();
+  const { dateFrom, dateTo, defaultMonth } = dobRange();
 
-  const handleImgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const passport: Record<string, string> = JSON.parse(
+      localStorage.getItem("passport") as string
+    );
+    const vPapers: Record<string, string>[] = JSON.parse(
+      localStorage.getItem("vPapers") as string
+    );
+
+    setPassport(passport);
+    form.setValue("passport", passport?.url);
+
+    if (vPapers) {
+      const papers = vPapers.map((paper) => paper.url);
+      form.setValue("vehiclePapers", papers);
+      setVPapers(vPapers);
+    }
+  }, []);
+
+  const convertBase64 = (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+
+      fileReader.onload = () => {
+        resolve(fileReader.result as string);
+      };
+
+      fileReader.onerror = (error) => {
+        reject(error);
+      };
+    });
+  };
+
+  const handleImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageUploading(true);
     const file = e.target.files?.item(0);
 
     if (file) {
@@ -86,53 +149,144 @@ export default function BusinessVerificationForm1(props: Props) {
         return;
       }
 
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        setPassport(reader.result as string);
-        setFile(file);
-      });
-      reader.readAsDataURL(file);
+      const data = await convertBase64(file);
+      const imgForm = new FormData();
+      imgForm.append("data", data);
+      imgForm.append("folder", `onboarding/individual/passports`);
+      imgForm.append("filename", session.data?.user.id!);
+      imgForm.append("upload_preset", "onboarding-passports");
+
+      try {
+        const res = await uploadFiles(imgForm);
+
+        if (!res.ok) {
+          toast({
+            variant: "destructive",
+            duration: 1000 * 60 * 8,
+            title: "Error",
+            description:
+              "An error occured uploading your passport photo, please try again",
+          });
+          return;
+        }
+
+        const data = await res.json();
+        setPassport({
+          name: file.name,
+          size: Math.round(Number(data.bytes) / 1024) + "kb",
+          src: `/v${data.version}/${data.public_id}`,
+          url: data.secure_url,
+        });
+
+        form.setValue("passport", passport?.url);
+        localStorage.setItem("passport", JSON.stringify(passport));
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Ooops..., an error has occured, please try again",
+        });
+      } finally {
+        setImageUploading(false);
+      }
     }
   };
 
-  const handlePaperUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePaperUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.item(0);
 
-    if (file) {
-      const err = validatePaper(file);
+    if (!file) return;
 
-      if (err) {
-        setVPaperError(err);
+    setPaperUploading(true);
+    const err = validatePaper(file);
+
+    if (err) {
+      setVPaperError(err);
+      return;
+    }
+
+    const fileExists = vPapers.find((paper) => paper.name === file.name);
+
+    if (fileExists) {
+      setVPaperError(`${file.name} file already exists`);
+      return;
+    }
+
+    const dataFile = await convertBase64(file);
+    const userId = session.data?.user.id!;
+
+    const imgForm = new FormData();
+    imgForm.append("data", dataFile);
+    imgForm.append("folder", `onboarding/individual/papers/${userId}`);
+    imgForm.append("filename", btoa(file.name));
+    imgForm.append("upload_preset", "onboarding-vehicle-papers");
+
+    try {
+      const res = await uploadFiles(imgForm);
+      const data = await res.json();
+      console.log(data);
+
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          duration: 1000 * 60 * 8,
+          title: "Error",
+          description:
+            "An error occured uploading your passport photo, please try again",
+        });
         return;
       }
 
-      const fileExists = papers.find((paper) => paper.name === file.name);
+      const paper = {
+        name: file.name,
+        size: Math.round(Number(data.bytes) / 1024) + "kb",
+        src: `/v${data.version}/${data.public_id}`,
+        url: data.secure_url,
+      };
 
-      if (fileExists) {
-        setVPaperError(`${file.name} file already exists`);
-      }
-
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        setPapers([
-          ...papers,
-          {
-            data: reader.result as string,
-            type: file.type,
-            name: file.name,
-          },
-        ]);
+      const papers = [...vPapers, paper];
+      setVPapers(papers);
+      localStorage.setItem("vPapers", JSON.stringify(papers));
+      const papersUrl = papers.map((paper) => paper.url);
+      form.setValue("vehiclePapers", papersUrl);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Ooops..., an error has occured, please try again",
       });
-
-      setVPapers([...vPapers, file]);
+    } finally {
+      setPaperUploading(false);
     }
   };
 
-  const removePaper = (paper: File) => {
-    const papersArr = papers.filter((p, i) => paper.name !== p.name);
-    const vpapersArr = vPapers.filter((p, i) => paper.name !== p.name);
-    setPapers(papersArr);
-    setVPapers(vpapersArr);
+  const removePaper = async (paper: Record<string, string>) => {
+    const vpapersArr = vPapers.filter((vp) => paper.name !== vp.name);
+
+    try {
+      const res = await deleteFiles(paper.src);
+
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          duration: 1000 * 60 * 8,
+          title: "Error",
+          description: "Failed to delete vehicle paper, please try again",
+        });
+        return;
+      }
+
+      setVPapers(vpapersArr);
+      localStorage.setItem("vPapers", JSON.stringify(vpapersArr));
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Ooops..., an error has occured, please try again",
+      });
+    } finally {
+      setPaperUploading(false);
+    }
   };
 
   return (
@@ -176,10 +330,18 @@ export default function BusinessVerificationForm1(props: Props) {
           name="vehiclePapers"
           render={() => (
             <FormItem className="">
-              <FormLabel className="">
-                Vehicle Papers
-                <span className="text-red-600 text-xl leading-none">*</span>
-              </FormLabel>
+              <div className="flex items-center">
+                <FormLabel className="after:text-red-600 after:ml-1 after:content-['*'] after:text-xl after:leading-none flex-1">
+                  Vehicle Papers
+                </FormLabel>
+                {isPaperUploading && (
+                  <Spinner
+                    twColor="text-primary before:bg-primary"
+                    twSize="w-3 h-3"
+                    className="ml-3"
+                  />
+                )}
+              </div>
               {vPapers.length ? (
                 <div className="flex items-end gap-3">
                   <ul className="flex items-center gap-2">
@@ -192,10 +354,11 @@ export default function BusinessVerificationForm1(props: Props) {
                           {paper.name}
                         </p>
                         <p className="font-medium text-gray-500 text-xs">
-                          {Math.round(paper.size / 1024)}kb
+                          {paper?.size}
                         </p>
                         <button
                           className="rounded-full bg-white p-1 z-10 absolute right-0 bottom-0"
+                          type="button"
                           onClick={() => removePaper(paper)}
                         >
                           <X className="w-4 h-4" />
@@ -208,7 +371,7 @@ export default function BusinessVerificationForm1(props: Props) {
                   </FormLabel>
                 </div>
               ) : (
-                <FormLabel className="text-xs py-1 w-full flex flex-col items-center bg-gray-100/40 hover:bg-gray-100 transition-colors gap-1 border border-dashed rounded-lg">
+                <FormLabel className="text-xs py-1 w-full flex items-center bg-gray-100/40 gap-1 hover:bg-gray-100 transition-colors border border-dashed rounded-lg flex-col">
                   <Upload className="w-3 h-3" />
                   Upload Papers
                 </FormLabel>
@@ -229,28 +392,42 @@ export default function BusinessVerificationForm1(props: Props) {
           name="image"
           render={() => (
             <FormItem className="">
-              <FormLabel className="">
-                Passport Photo
-                <span className="text-red-600 text-xl leading-none">*</span>
-              </FormLabel>
-              {imgFile ? (
+              <div className="flex items-center">
+                <FormLabel className="after:text-red-600 after:ml-1 after:content-['*'] after:text-xl after:leading-none flex-1">
+                  Passport Photo
+                </FormLabel>
+                {isImageUploading && (
+                  <Spinner
+                    twColor="text-primary before:bg-primary"
+                    twSize="w-3 h-3"
+                    className="ml-3"
+                  />
+                )}
+              </div>
+              {passport ? (
                 <div className="flex items-center gap-3">
                   <Avatar className="rounded-none relative">
-                    <AvatarImage src={passport} />
+                    <AvatarImage asChild>
+                      <Image
+                        loader={passportLoader}
+                        width={40}
+                        height={40}
+                        src={passport.src}
+                        alt="Director's passport"
+                      />
+                    </AvatarImage>
                     <FormLabel className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors block w-full"></FormLabel>
                     <span className="rounded-full bg-white p-1 absolute right-0 bottom-0">
                       <Edit2 className="w-2 h-2" />
                     </span>
                   </Avatar>
                   <span className="text-xs text-gray-600">
-                    <p className="mb-1 font-medium">{imgFile.name}</p>
-                    <p className="font-medium">
-                      {Math.round(imgFile.size / 1024)}kb
-                    </p>
+                    <p className="mb-1 font-medium">{passport.name}</p>
+                    <p className="font-medium">{passport.size}</p>
                   </span>
                 </div>
               ) : (
-                <FormLabel className="text-xs py-1 w-full flex flex-col items-center bg-gray-100/40 hover:bg-gray-100 transition-colors gap-1 border border-dashed rounded-lg">
+                <FormLabel className="text-xs py-1 w-full flex bg-gray-100/40 hover:bg-gray-100 transition-colors border border-dashed rounded-lg gap-1 flex-col items-center">
                   <Upload className="w-3 h-3" />
                   Upload Passport Photo
                 </FormLabel>

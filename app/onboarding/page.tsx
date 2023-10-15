@@ -32,12 +32,6 @@ export interface SocMedia {
   handle: string;
 }
 
-export type Papers = {
-  data: string;
-  name: string;
-  type: string;
-};
-
 const NUM_OF_FORM_PAGES = 2;
 
 const verifyBusiness = async (formData: BVFormData) => {
@@ -93,9 +87,9 @@ const verifyIBusiness = async (formData: IVFormData) => {
 
 export default function VerifyBusinessForm() {
   const [page, setPage] = useState(1);
-  const [imgFile, setImgFile] = useState<File>();
   const [socialMedia, setSocialMedia] = useState<Record<string, SocMedia>>({});
-  const [papers, setPapers] = useState<Papers[]>([]);
+  const [papersUrl, setPapersUrl] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   const router = useRouter();
   const session = useSession();
@@ -104,7 +98,9 @@ export default function VerifyBusinessForm() {
     router.push("/login?callback=/onboarding");
   }
 
+  const isLoading = session.status === "loading";
   const isBusiness = session.data?.user?.role.businessType === "business";
+  const isIndividual = session.data?.user?.role.businessType === "individual";
 
   const bvForm = useForm<BVFormData>({
     resolver: zodResolver(BVFormSchema),
@@ -125,7 +121,7 @@ export default function VerifyBusinessForm() {
     try {
       const data = {
         ...formData,
-        directorDetail: { ...formData.directorDetail, image: imgFile },
+        directorDetail: { ...formData.directorDetail, imageUrl },
         socialMedia: Object.assign(
           {},
           ...Object.values(socialMedia).map(({ name, handle }) => ({
@@ -162,8 +158,8 @@ export default function VerifyBusinessForm() {
     try {
       const data = {
         ...formData,
-        vehiclePapers: papers,
-        passport: imgFile,
+        vehiclePapers: papersUrl,
+        passport: imageUrl,
       };
 
       const res = await verifyIBusiness(data);
@@ -192,23 +188,27 @@ export default function VerifyBusinessForm() {
 
   return (
     <Container compact>
-      <div className="shadow-3xl rounded-lg py-6 px-5 sm:px-8 md:py-8 xl:px-12 my-6 md:my-9">
+      <div className="shadow-3xl rounded-lg py-6 px-5 sm:px-8 md:py-8 xl:px-12 my-6 md:my-9 min-h-[calc(100vh_-_8rem)]">
         <div className=" mb-6 md:mb-9">
           <h1 className="text-3xl text-primary font-bold">Business</h1>
           <h1 className="text-3xl text-primary font-bold">Verification</h1>
         </div>
-        {isBusiness ? (
+        {isLoading && (
+          <div className="w-full py-12 md:py-24 flex items-center justify-center">
+            <Spinner
+              twColor="text-primary before:bg-primary"
+              twSize="w-12 h-12"
+            />
+          </div>
+        )}
+        {isBusiness && (
           <Form {...bvForm}>
             <form
               onSubmit={bvForm.handleSubmit(handleBVSubmit)}
               className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
             >
               {page === 1 ? (
-                <BusinessVerificationForm1
-                  form={bvForm}
-                  setFile={setImgFile}
-                  imgFile={imgFile}
-                />
+                <BusinessVerificationForm1 form={bvForm} />
               ) : (
                 <BusinessVerificationForm2
                   form={bvForm}
@@ -263,20 +263,15 @@ export default function VerifyBusinessForm() {
               </div>
             </form>
           </Form>
-        ) : (
+        )}
+        {isIndividual && (
           <Form {...ivForm}>
             <form
               onSubmit={ivForm.handleSubmit(handleIVSubmit)}
               className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
             >
               {page === 1 ? (
-                <IndividualVerificationForm1
-                  form={ivForm}
-                  setFile={setImgFile}
-                  imgFile={imgFile}
-                  setPapers={setPapers}
-                  papers={papers}
-                />
+                <IndividualVerificationForm1 form={ivForm} />
               ) : (
                 <IndividualVerificationForm2 form={ivForm} />
               )}

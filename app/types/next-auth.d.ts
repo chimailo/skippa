@@ -5,6 +5,7 @@ declare module "next-auth" {
   export interface Session {
     token: string;
     user: {
+      id: string;
       role: Record<string, string | string[]>;
     } & DefaultSession["user"];
   }

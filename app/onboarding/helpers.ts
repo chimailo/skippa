@@ -3,7 +3,7 @@ import { z } from "zod";
 export const iVInitialValues = {
   driversLicense: "",
   vehicleNumber: "",
-  dateOfBirth: new Date(),
+  dateOfBirth: "",
   guarantorDetail: {
     lastName: "",
     firstName: "",
@@ -25,6 +25,8 @@ export const iVInitialValues = {
     accountNumber: "",
   },
   deliveryCategory: [],
+  passport: "",
+  vehiclePapers: [],
 };
 
 export const bVinitialValues = {
@@ -43,7 +45,8 @@ export const bVinitialValues = {
     idType: "",
     firstName: "",
     lastName: "",
-    dob: new Date(),
+    dob: "",
+    image: "",
   },
   addressDetail: {
     flatNumber: "",
@@ -102,9 +105,8 @@ export const BVFormSchema = z.object({
       .nonempty({ message: "Last Name is required" })
       .min(2, "Last Name must be at least 2 characters long")
       .max(64, "Last Name cannot be more than 64 characters"),
-    dob: z.date({
-      required_error: "Date of birth is required.",
-    }),
+    dob: z.date().refine((val) => Boolean(val), "Date of birth is required."),
+    image: z.string().optional(),
   }),
   addressDetail: z.object({
     flatNumber: z.string(),
@@ -153,6 +155,8 @@ export const IVFormSchema = z.object({
       .min(2, "Last Name must be at least 2 characters long")
       .max(64, "Last Name cannot be more than 64 characters"),
   }),
+  passport: z.string().optional(),
+  vehiclePapers: z.string().array().optional(),
   addressDetail: z.object({
     flatNumber: z.string(),
     buildingName: z.string(),

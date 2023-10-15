@@ -45,3 +45,10 @@ export const validatePaper = (file: File) => {
     return `Passport must not be larger than 1mb`;
   }
 };
+
+export function dobRange() {
+  const dateTo = new Date().getFullYear() - 18;
+  const dateFrom = new Date().getFullYear() - 70;
+  const defaultMonth = new Date(dateTo, new Date().getMonth());
+  return { dateFrom, dateTo, defaultMonth };
+}

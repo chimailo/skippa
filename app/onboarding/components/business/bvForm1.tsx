@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
 import { UseFormReturn } from "react-hook-form";
 import { CalendarIcon, Edit2, Upload } from "lucide-react";
 import { format } from "date-fns";
@@ -26,7 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { cn, validatePassport } from "@/app/utils";
+import {
+  cn,
+  dobRange,
+  splitCamelCaseText,
+  validatePassport,
+} from "@/app/utils";
+import { useToast } from "@/app/components/ui/use-toast";
+import Spinner from "@/app/components/loading";
 
 type FormDataType = UseFormReturn<
   {
@@ -44,6 +53,7 @@ type FormDataType = UseFormReturn<
       idType: string;
       firstName: string;
       lastName: string;
+      image?: string;
       dob: Date;
     };
     addressDetail: {
@@ -64,39 +74,107 @@ type FormDataType = UseFormReturn<
 
 type Props = {
   form: FormDataType;
-  setFile: React.Dispatch<React.SetStateAction<File | undefined>>;
-  imgFile?: File;
 };
 
-export default function BusinessVerificationForm1({
-  form,
-  imgFile,
-  setFile,
-}: Props) {
-  const [passport, setPassport] = useState<string>();
+function passportLoader({ src, width }: { src: string; width: number }) {
+  const params = ["c_scale", "f_auto", `w_${width}`, "q_auto"];
+  return `https://res.cloudinary.com/drgtk7a9s/image/upload/${params.join(
+    ","
+  )}${src}`;
+}
+
+const uploadFiles = async (file: FormData) => {
+  const res = await fetch(`/api/uploads`, {
+    method: "POST",
+    body: file,
+  });
+
+  return await res.json();
+};
+
+export default function BusinessVerificationForm1({ form }: Props) {
+  const [isImageUploading, setImageUploading] = useState(false);
+  const [passport, setPassport] = useState<Record<string, string>>();
   const [passportError, setPassportError] = useState<string>();
 
-  const dateTo = new Date().getFullYear() - 18;
-  const dateFrom = new Date().getFullYear() - 70;
-  const defaultMonth = new Date(dateTo, new Date().getMonth());
+  const session = useSession();
+  const { toast } = useToast();
+  const { dateFrom, dateTo, defaultMonth } = dobRange();
 
-  const handleImgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const passport: Record<string, string> = JSON.parse(
+      localStorage.getItem("passport") as string
+    );
+    setPassport(passport);
+  }, []);
+
+  const convertBase64 = (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+
+      fileReader.onload = () => {
+        resolve(fileReader.result as string);
+      };
+
+      fileReader.onerror = (error) => {
+        reject(error);
+      };
+    });
+  };
+
+  const handleImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.item(0);
 
-    if (file) {
-      const err = validatePassport(file);
+    if (!file) return;
 
-      if (err) {
-        setPassportError(err);
+    const err = validatePassport(file);
+
+    if (err) {
+      setPassportError(err);
+      return;
+    }
+
+    const data = await convertBase64(file);
+
+    const imgForm = new FormData();
+    imgForm.append("data", data);
+    imgForm.append("folder", "onboarding/business");
+    imgForm.append("filename", session.data?.user.id!);
+    imgForm.append("upload_preset", "onboarding-passports");
+
+    try {
+      setImageUploading(true);
+      const res = await uploadFiles(imgForm);
+
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          duration: 1000 * 60 * 8,
+          title: "Error",
+          description:
+            "An error occured uploading your passport photo, please try again",
+        });
         return;
       }
 
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        setPassport(reader.result as string);
-        setFile(file);
+      const image = {
+        name: file.name,
+        size: Math.round(Number(res.bytes) / 1024) + "kb",
+        src: `/v${res.version}/${res.public_id}`,
+        url: res.secure_url,
+      };
+      setPassport(image);
+      form.setValue("directorDetail.image", image.url);
+      localStorage.setItem("passport", JSON.stringify(image));
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Ooops..., an error has occured, please try again",
       });
-      reader.readAsDataURL(file);
+    } finally {
+      setImageUploading(false);
     }
   };
 
@@ -262,24 +340,38 @@ export default function BusinessVerificationForm1({
           name="image"
           render={() => (
             <FormItem className="">
-              <FormLabel className="">
-                Passport Photo
-                <span className="text-red-600 text-xl leading-none">*</span>
-              </FormLabel>
-              {imgFile ? (
+              <div className="flex items-center">
+                <FormLabel className="after:text-red-600 after:ml-1 after:content-['*'] after:text-xl after:leading-none flex-1">
+                  Vehicle Papers
+                </FormLabel>
+                {isImageUploading && (
+                  <Spinner
+                    twColor="text-primary before:bg-primary"
+                    twSize="w-3 h-3"
+                    className="ml-3"
+                  />
+                )}
+              </div>
+              {passport ? (
                 <div className="flex items-center gap-3">
                   <Avatar className="rounded-none relative">
-                    <AvatarImage src={passport} />
+                    <AvatarImage asChild>
+                      <Image
+                        loader={passportLoader}
+                        width={40}
+                        height={40}
+                        src={passport.src}
+                        alt="Director's passport"
+                      />
+                    </AvatarImage>
                     <FormLabel className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors block w-full"></FormLabel>
                     <span className="rounded-full bg-white p-1 absolute right-0 bottom-0">
                       <Edit2 className="w-2 h-2" />
                     </span>
                   </Avatar>
                   <span className="text-xs text-gray-600">
-                    <p className="mb-1 font-medium">{imgFile.name}</p>
-                    <p className="font-medium">
-                      {Math.round(imgFile.size / 1024)}kb
-                    </p>
+                    <p className="mb-1 font-medium">{passport.name}</p>
+                    <p className="font-medium">{passport.size}</p>
                   </span>
                 </div>
               ) : (
