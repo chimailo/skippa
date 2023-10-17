@@ -12,7 +12,7 @@ type FormData = UseFormReturn<
   {
     vehicleNumber: string;
     driversLicense: string;
-    dateOfBirth: Date;
+    dateOfBirth: string;
     guarantorDetail: {
       lastName: string;
       firstName: string;

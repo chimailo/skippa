@@ -105,7 +105,7 @@ export const BVFormSchema = z.object({
       .nonempty({ message: "Last Name is required" })
       .min(2, "Last Name must be at least 2 characters long")
       .max(64, "Last Name cannot be more than 64 characters"),
-    dob: z.date().refine((val) => Boolean(val), "Date of birth is required."),
+    dob: z.string().datetime().nonempty("Date of birth is required."),
     image: z.string().optional(),
   }),
   addressDetail: z.object({
@@ -138,7 +138,7 @@ export const IVFormSchema = z.object({
     .nonempty({ message: "Vehicle number is required" })
     .min(2, "Vehicle Number must be at least 2 characters long")
     .max(64, "Vehicle Number cannot be more than 16 characters"),
-  dateOfBirth: z.date(),
+  dateOfBirth: z.string().datetime().nonempty("Date of birth is required."),
   guarantorDetail: z.object({
     email: z
       .string()

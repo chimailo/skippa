@@ -35,7 +35,7 @@ type FormDataType = UseFormReturn<
       idType: string;
       firstName: string;
       lastName: string;
-      dob: Date;
+      dob: string;
     };
     addressDetail: {
       flatNumber: string;

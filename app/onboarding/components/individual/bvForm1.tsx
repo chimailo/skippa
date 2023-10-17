@@ -36,7 +36,7 @@ type FormDataType = UseFormReturn<
   {
     vehicleNumber: string;
     driversLicense: string;
-    dateOfBirth: Date;
+    dateOfBirth: string;
     passport?: string;
     vehiclePapers?: string[];
     guarantorDetail: {

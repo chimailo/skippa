@@ -28,12 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import {
-  cn,
-  dobRange,
-  splitCamelCaseText,
-  validatePassport,
-} from "@/app/utils";
+import { cn, dobRange, validatePassport } from "@/app/utils";
 import { useToast } from "@/app/components/ui/use-toast";
 import Spinner from "@/app/components/loading";
 
@@ -54,7 +49,7 @@ type FormDataType = UseFormReturn<
       firstName: string;
       lastName: string;
       image?: string;
-      dob: Date;
+      dob: string;
     };
     addressDetail: {
       flatNumber: string;
