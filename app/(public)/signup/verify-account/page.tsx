@@ -265,6 +265,7 @@ export default function VerifyAccountForm() {
             <p className="sm:text-xl">
               Didn’t receive a code?
               <Button
+                type="button"
                 variant="ghost"
                 className="sm:text-xl ml-1 text-base"
                 onClick={(e) => handleResendCode(e)}
@@ -272,7 +273,7 @@ export default function VerifyAccountForm() {
                 Resend code
                 {isResending && (
                   <Spinner
-                    twColor="text-white before:bg-white"
+                    twColor="text-primary before:bg-primary"
                     twSize="w-4 h-4"
                     className="ml-3"
                   />

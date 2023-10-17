@@ -151,6 +151,7 @@ export default function LoginForm() {
                     />
                     <Button
                       size="sm"
+                      type="button"
                       variant="ghost"
                       className="hover:bg-gray-100 absolute right-2 top-[1.6rem] z-50"
                       onClick={(e) => {

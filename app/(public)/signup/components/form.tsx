@@ -303,6 +303,7 @@ export default function SignUpForm() {
                     />
                     <Button
                       size="sm"
+                      type="button"
                       variant="ghost"
                       className="hover:bg-gray-100 absolute right-2 top-[1.6rem] z-50"
                       onClick={(e) => {
@@ -318,7 +319,6 @@ export default function SignUpForm() {
               </FormItem>
             )}
           />
-          <FormControl className="flex items-center gap-3"></FormControl>
           <FormField
             control={form.control}
             name="confirmPassword"
@@ -332,6 +332,7 @@ export default function SignUpForm() {
                       {...field}
                     />
                     <Button
+                      type="button"
                       size="sm"
                       variant="ghost"
                       className="hover:bg-gray-100 absolute right-2 top-[1.6rem] z-50"
@@ -383,7 +384,6 @@ export default function SignUpForm() {
           />
           <div className="space-y-4">
             <Button
-              type="submit"
               disabled={form.formState.isSubmitting}
               size="lg"
               className="w-full font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
