@@ -35,27 +35,26 @@ export interface SocMedia {
 
 const NUM_OF_FORM_PAGES = 2;
 
-const verifyBusiness = async (formData: BVFormData) => {
-  const { deliveryCategory, ...rest } = formData;
+const verifyBusiness = async (formData: BVFormData, token?: string) => {
+  const { deliveryCategory: category, ...rest } = formData;
 
-  const category = {
-    bike: deliveryCategory.includes("motorcycle"),
-    car: deliveryCategory.includes("car"),
-    van: deliveryCategory.includes("van"),
-    truck: deliveryCategory.includes("truck"),
+  const deliveryCategory = {
+    bike: category.includes("motorcycle"),
+    car: category.includes("car"),
+    van: category.includes("van"),
+    truck: category.includes("truck"),
   };
 
   const directorDetail = {
     ...formData.directorDetail,
-    dob: new Date(formData.directorDetail.dob).toISOString(),
+    dateOfBirth: new Date(formData.directorDetail.dateOfBirth).toISOString(),
   };
-  console.log({ ...rest, category, directorDetail });
 
   const res = await fetch(`/api/merchants/onboarding/business`, {
     method: "POST",
-    body: JSON.stringify({ ...rest, category, directorDetail }),
+    body: JSON.stringify({ ...rest, deliveryCategory, directorDetail, token }),
     headers: {
-      "Content-Type": "multipart/form-data",
+      "Content-Type": "application/json",
     },
   });
   const { data } = await res.json();
@@ -63,7 +62,7 @@ const verifyBusiness = async (formData: BVFormData) => {
   return data;
 };
 
-const verifyIBusiness = async (formData: IVFormData) => {
+const verifyIBusiness = async (formData: IVFormData, token?: string) => {
   const { deliveryCategory, ...rest } = formData;
 
   const category = {
@@ -72,13 +71,12 @@ const verifyIBusiness = async (formData: IVFormData) => {
     van: deliveryCategory.includes("van"),
     truck: deliveryCategory.includes("truck"),
   };
-  console.log({ ...rest, category });
 
   const res = await fetch(`/api/merchants/onboarding/individual`, {
     method: "POST",
-    body: JSON.stringify({ ...rest, category }),
+    body: JSON.stringify({ ...rest, deliveryCategory: category, token }),
     headers: {
-      "Content-Type": "multipart/form-data",
+      "Content-Type": "application/json",
     },
   });
   const { data } = await res.json();
@@ -112,15 +110,18 @@ export default function VerifyBusinessForm() {
     mode: "onBlur",
   });
 
-  const form = isBusiness ? bvForm : ivForm;
+  const form = isIndividual ? ivForm : bvForm;
 
   const { toast } = useToast();
+
+  console.log(form.formState.isValid);
+  console.log(form.getValues());
+  console.log(form.formState.errors);
 
   async function handleBVSubmit(formData: BVFormData) {
     try {
       const data = {
         ...formData,
-        // directorDetail: { ...formData.directorDetail, imageUrl },
         socialMedia: Object.assign(
           {},
           ...Object.values(socialMedia).map(({ name, handle }) => ({
@@ -129,8 +130,8 @@ export default function VerifyBusinessForm() {
         ),
       };
 
-      console.log(formData);
-      const res = await verifyBusiness(data);
+      console.log(data);
+      const res = await verifyBusiness(data, session.data?.token);
 
       if (!res.success) {
         toast({
@@ -144,6 +145,7 @@ export default function VerifyBusinessForm() {
       }
 
       form.reset();
+      localStorage.removeItem("passport");
       router.push("/dashboard");
     } catch (error) {
       toast({
@@ -156,14 +158,7 @@ export default function VerifyBusinessForm() {
 
   async function handleIVSubmit(formData: IVFormData) {
     try {
-      // const data = {
-      //   ...formData,
-      //   vehiclePapers: papersUrl,
-      //   passport: imageUrl,
-      // };
-
-      console.log(formData);
-      const res = await verifyIBusiness(formData);
+      const res = await verifyIBusiness(formData, session.data?.token);
 
       if (!res.success) {
         toast({
@@ -177,6 +172,8 @@ export default function VerifyBusinessForm() {
       }
 
       form.reset();
+      localStorage.removeItem("passport");
+      localStorage.removeItem("vPapers");
       router.push("/dashboard");
     } catch (error) {
       toast({
@@ -200,7 +197,7 @@ export default function VerifyBusinessForm() {
             <div className="w-full py-12 md:py-24 flex items-center justify-center">
               <Spinner
                 twColor="text-primary before:bg-primary"
-                twSize="w-12 h-12"
+                twSize="w-8 h-8"
               />
             </div>
           )}

@@ -12,7 +12,7 @@ type FormData = UseFormReturn<
   {
     vehicleNumber: string;
     driversLicense: string;
-    dateOfBirth: string;
+    dateOfBirth: Date;
     guarantorDetail: {
       lastName: string;
       firstName: string;
@@ -23,13 +23,18 @@ type FormData = UseFormReturn<
       bankName: string;
       accountNumber: string;
     };
+    vehiclePapers: Array<{
+      vehicalPaperImages: string;
+      type: string;
+      name: string;
+    }>;
     addressDetail: {
-      flatNumber: string;
+      flatNumber?: string;
       landmark: string;
       buildingNumber: string;
-      buildingName: string;
+      buildingName?: string;
       street: string;
-      subStreet: string;
+      subStreet?: string;
       country: string;
       state: string;
       city: string;

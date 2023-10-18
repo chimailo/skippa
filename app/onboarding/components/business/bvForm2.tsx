@@ -22,7 +22,7 @@ import { Button } from "@/app/components/ui/button";
 type FormDataType = UseFormReturn<
   {
     billingEmail: string;
-    supportEmail: string;
+    supportEmail?: string;
     tin: string;
     registrationNumber: string;
     deliveryCategory: [string, ...string[]];
@@ -35,15 +35,15 @@ type FormDataType = UseFormReturn<
       idType: string;
       firstName: string;
       lastName: string;
-      dob: string;
+      dateOfBirth: Date;
     };
     addressDetail: {
-      flatNumber: string;
+      flatNumber?: string;
       landmark: string;
       buildingNumber: string;
-      buildingName: string;
+      buildingName?: string;
       street: string;
-      subStreet: string;
+      subStreet?: string;
       country: string;
       state: string;
       city: string;
@@ -126,10 +126,9 @@ export default function BusinessVerificationForm2({
               +
             </Button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            {Array.from({ length: socialMediaFormCount }, (_, k) => (
+          {Array.from({ length: socialMediaFormCount }, (_, k) => (
+            <div key={k} className="grid grid-cols-3 gap-4">
               <FormField
-                key={k}
                 name="socialMedia"
                 render={() => (
                   <>
@@ -159,33 +158,33 @@ export default function BusinessVerificationForm2({
                       </Select>
                       <FormMessage />
                     </FormItem>
-                    <FormField
-                      name="socialMedia"
-                      render={() => (
-                        <FormItem className="w-full col-span-2">
-                          <FormControl>
-                            <Input
-                              type="text"
-                              onChange={(e) =>
-                                setSocMedia({
-                                  ...socMedia,
-                                  [k]: {
-                                    ...socMedia[k],
-                                    handle: e.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </>
                 )}
               />
-            ))}
-          </div>
+              <FormField
+                name="socialMedia"
+                render={() => (
+                  <FormItem className="w-full col-span-2">
+                    <FormControl>
+                      <Input
+                        type="text"
+                        onChange={(e) =>
+                          setSocMedia({
+                            ...socMedia,
+                            [k]: {
+                              ...socMedia[k],
+                              handle: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          ))}
         </div>
       </div>
       <div className="block sm:grid sm:grid-cols-2 gap-3 space-y-8 sm:space-y-0">
@@ -318,7 +317,7 @@ export default function BusinessVerificationForm2({
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormLabel className="">
-                  LGA
+                  City
                   <span className="text-red-600 text-xl leading-none">*</span>
                 </FormLabel>
                 <FormControl>

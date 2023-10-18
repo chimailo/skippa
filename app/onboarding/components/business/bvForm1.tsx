@@ -35,7 +35,7 @@ import Spinner from "@/app/components/loading";
 type FormDataType = UseFormReturn<
   {
     billingEmail: string;
-    supportEmail: string;
+    supportEmail?: string;
     tin: string;
     registrationNumber: string;
     deliveryCategory: [string, ...string[]];
@@ -49,15 +49,15 @@ type FormDataType = UseFormReturn<
       firstName: string;
       lastName: string;
       image?: string;
-      dob: string;
+      dateOfBirth: Date;
     };
     addressDetail: {
-      flatNumber: string;
+      flatNumber?: string;
       landmark: string;
       buildingNumber: string;
-      buildingName: string;
+      buildingName?: string;
       street: string;
-      subStreet: string;
+      subStreet?: string;
       country: string;
       state: string;
       city: string;
@@ -79,12 +79,10 @@ function passportLoader({ src, width }: { src: string; width: number }) {
 }
 
 const uploadFiles = async (file: FormData) => {
-  const res = await fetch(`/api/uploads`, {
+  return await fetch(`/api/uploads`, {
     method: "POST",
     body: file,
   });
-
-  return await res.json();
 };
 
 export default function BusinessVerificationForm1({ form }: Props) {
@@ -101,6 +99,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       localStorage.getItem("passport") as string
     );
     setPassport(passport);
+    form.setValue("directorDetail.image", passport.url);
   }, []);
 
   const convertBase64 = (file: File) => {
@@ -130,10 +129,10 @@ export default function BusinessVerificationForm1({ form }: Props) {
       return;
     }
 
-    const data = await convertBase64(file);
+    const rawData = await convertBase64(file);
 
     const imgForm = new FormData();
-    imgForm.append("data", data);
+    imgForm.append("data", rawData);
     imgForm.append("folder", "onboarding/business");
     imgForm.append("filename", session.data?.user.id!);
     imgForm.append("upload_preset", "onboarding-passports");
@@ -141,6 +140,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
     try {
       setImageUploading(true);
       const res = await uploadFiles(imgForm);
+      const data = await res.json();
 
       if (!res.ok) {
         toast({
@@ -155,11 +155,12 @@ export default function BusinessVerificationForm1({ form }: Props) {
 
       const image = {
         name: file.name,
-        size: Math.round(Number(res.bytes) / 1024) + "kb",
-        src: `/v${res.version}/${res.public_id}`,
-        url: res.secure_url,
+        size: Math.round(Number(data.bytes) / 1024) + "kb",
+        src: `/v${data.version}/${data.public_id}`,
+        url: data.secure_url,
       };
       setPassport(image);
+      console.log(passport);
       form.setValue("directorDetail.image", image.url);
       localStorage.setItem("passport", JSON.stringify(image));
     } catch (error) {
@@ -288,7 +289,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       <div className="block sm:grid sm:grid-cols-2 gap-3 space-y-6 sm:space-y-0">
         <FormField
           control={form.control}
-          name="directorDetail.dob"
+          name="directorDetail.dateOfBirth"
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel className="">

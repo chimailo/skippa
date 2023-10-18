@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 import { UseFormReturn } from "react-hook-form";
 import { CalendarIcon, Edit2, Plus, Upload, X } from "lucide-react";
 import { format } from "date-fns";
@@ -20,25 +21,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/app/components/ui/popover";
-import {
-  cn,
-  dobRange,
-  splitCamelCaseText,
-  validatePaper,
-  validatePassport,
-} from "@/app/utils";
+import { cn, dobRange, validatePaper, validatePassport } from "@/app/utils";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { useToast } from "@/app/components/ui/use-toast";
-import { useSession } from "next-auth/react";
 import Spinner from "@/app/components/loading";
 
 type FormDataType = UseFormReturn<
   {
     vehicleNumber: string;
     driversLicense: string;
-    dateOfBirth: string;
-    passport?: string;
-    vehiclePapers?: string[];
+    dateOfBirth: Date;
+    image?: string;
     guarantorDetail: {
       lastName: string;
       firstName: string;
@@ -49,13 +42,18 @@ type FormDataType = UseFormReturn<
       bankName: string;
       accountNumber: string;
     };
+    vehiclePapers: Array<{
+      vehicalPaperImages: string;
+      type: string;
+      name: string;
+    }>;
     addressDetail: {
-      flatNumber: string;
+      flatNumber?: string;
       landmark: string;
       buildingNumber: string;
-      buildingName: string;
+      buildingName?: string;
       street: string;
-      subStreet: string;
+      subStreet?: string;
       country: string;
       state: string;
       city: string;
@@ -113,10 +111,14 @@ export default function BusinessVerificationForm1({ form }: Props) {
     );
 
     setPassport(passport);
-    form.setValue("passport", passport?.url);
+    form.setValue("image", passport?.url);
 
     if (vPapers) {
-      const papers = vPapers.map((paper) => paper.url);
+      const papers = vPapers.map((paper) => ({
+        vehicalPaperImages: paper.url,
+        type: "image",
+        name: paper.name,
+      }));
       form.setValue("vehiclePapers", papers);
       setVPapers(vPapers);
     }
@@ -171,15 +173,19 @@ export default function BusinessVerificationForm1({ form }: Props) {
         }
 
         const data = await res.json();
-        setPassport({
+        const img = {
           name: file.name,
           size: Math.round(Number(data.bytes) / 1024) + "kb",
           src: `/v${data.version}/${data.public_id}`,
           url: data.secure_url,
-        });
+        };
 
-        form.setValue("passport", passport?.url);
-        localStorage.setItem("passport", JSON.stringify(passport));
+        setPassport(img);
+        form.setValue("image", img.url, {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+        localStorage.setItem("passport", JSON.stringify(img));
       } catch (error) {
         toast({
           variant: "destructive",
@@ -197,7 +203,6 @@ export default function BusinessVerificationForm1({ form }: Props) {
 
     if (!file) return;
 
-    setPaperUploading(true);
     const err = validatePaper(file);
 
     if (err) {
@@ -222,6 +227,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
     imgForm.append("upload_preset", "onboarding-vehicle-papers");
 
     try {
+      setPaperUploading(true);
       const res = await uploadFiles(imgForm);
       const data = await res.json();
       console.log(data);
@@ -238,6 +244,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       }
 
       const paper = {
+        id: data.public_id,
         name: file.name,
         size: Math.round(Number(data.bytes) / 1024) + "kb",
         src: `/v${data.version}/${data.public_id}`,
@@ -247,8 +254,12 @@ export default function BusinessVerificationForm1({ form }: Props) {
       const papers = [...vPapers, paper];
       setVPapers(papers);
       localStorage.setItem("vPapers", JSON.stringify(papers));
-      const papersUrl = papers.map((paper) => paper.url);
-      form.setValue("vehiclePapers", papersUrl);
+      const papersUrl = papers.map((paper) => ({
+        vehicalPaperImages: paper.url,
+        type: "image",
+        name: paper.name,
+      }));
+      form.setValue("vehiclePapers", papersUrl, { shouldValidate: true });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -264,9 +275,12 @@ export default function BusinessVerificationForm1({ form }: Props) {
     const vpapersArr = vPapers.filter((vp) => paper.name !== vp.name);
 
     try {
-      const res = await deleteFiles(paper.src);
+      setPaperUploading(true);
+      const res = await deleteFiles(paper.id);
+      const data = await res.json();
+      console.log(data);
 
-      if (!res.ok) {
+      if (data.result !== "ok") {
         toast({
           variant: "destructive",
           duration: 1000 * 60 * 8,

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const iVInitialValues = {
   driversLicense: "",
   vehicleNumber: "",
-  dateOfBirth: "",
+  dateOfBirth: undefined,
   guarantorDetail: {
     lastName: "",
     firstName: "",
@@ -25,7 +25,7 @@ export const iVInitialValues = {
     accountNumber: "",
   },
   deliveryCategory: [],
-  passport: "",
+  image: "",
   vehiclePapers: [],
 };
 
@@ -34,7 +34,6 @@ export const bVinitialValues = {
   supportEmail: "",
   tin: "",
   registrationNumber: "",
-  // socialMedia: {},
   deliveryCategory: [],
   bankAccountDetail: {
     bankName: "",
@@ -45,7 +44,7 @@ export const bVinitialValues = {
     idType: "",
     firstName: "",
     lastName: "",
-    dob: "",
+    dateOfBirth: undefined,
     image: "",
   },
   addressDetail: {
@@ -66,7 +65,7 @@ export const BVFormSchema = z.object({
     .string()
     .nonempty({ message: "Billing Email is required" })
     .email({ message: "Invalid email" }),
-  supportEmail: z.string().email({ message: "Invalid email" }),
+  supportEmail: z.string().email({ message: "Invalid email" }).optional(),
   tin: z
     .string()
     .nonempty({ message: "Tax Identification Number is required" })
@@ -105,12 +104,14 @@ export const BVFormSchema = z.object({
       .nonempty({ message: "Last Name is required" })
       .min(2, "Last Name must be at least 2 characters long")
       .max(64, "Last Name cannot be more than 64 characters"),
-    dob: z.string().datetime().nonempty("Date of birth is required."),
+    dateOfBirth: z
+      .date()
+      .refine((val) => Boolean(val), { message: "Date of birth is required" }),
     image: z.string().optional(),
   }),
   addressDetail: z.object({
-    flatNumber: z.string(),
-    buildingName: z.string(),
+    flatNumber: z.string().optional(),
+    buildingName: z.string().optional(),
     landmark: z.string().nonempty({ message: "Landmark is required" }),
     buildingNumber: z
       .string()
@@ -120,7 +121,7 @@ export const BVFormSchema = z.object({
       .nonempty({ message: "Street is required" })
       .min(2, "Street must be at least 2 characters long")
       .max(64, "Street cannot be more than 64 characters"),
-    subStreet: z.string(),
+    subStreet: z.string().optional(),
     country: z.string().nonempty({ message: "Country is required" }),
     state: z.string().nonempty({ message: "State is required" }),
     city: z.string().nonempty({ message: "LGA is required" }),
@@ -138,7 +139,9 @@ export const IVFormSchema = z.object({
     .nonempty({ message: "Vehicle number is required" })
     .min(2, "Vehicle Number must be at least 2 characters long")
     .max(64, "Vehicle Number cannot be more than 16 characters"),
-  dateOfBirth: z.string().datetime().nonempty("Date of birth is required."),
+  dateOfBirth: z
+    .date()
+    .refine((val) => Boolean(val), { message: "Date of birth is required" }),
   guarantorDetail: z.object({
     email: z
       .string()
@@ -155,11 +158,17 @@ export const IVFormSchema = z.object({
       .min(2, "Last Name must be at least 2 characters long")
       .max(64, "Last Name cannot be more than 64 characters"),
   }),
-  passport: z.string().optional(),
-  vehiclePapers: z.string().array().optional(),
+  image: z.string().optional(),
+  vehiclePapers: z
+    .object({
+      vehicalPaperImages: z.string().url(),
+      type: z.string(),
+      name: z.string(),
+    })
+    .array(),
   addressDetail: z.object({
-    flatNumber: z.string(),
-    buildingName: z.string(),
+    flatNumber: z.string().optional(),
+    buildingName: z.string().optional(),
     landmark: z.string().nonempty({ message: "Landmark is required" }),
     buildingNumber: z
       .string()
@@ -169,7 +178,7 @@ export const IVFormSchema = z.object({
       .nonempty({ message: "Street is required" })
       .min(2, "Street must be at least 2 characters long")
       .max(64, "Street cannot be more than 64 characters"),
-    subStreet: z.string(),
+    subStreet: z.string().optional(),
     country: z.string().nonempty({ message: "Country is required" }),
     state: z.string().nonempty({ message: "State is required" }),
     city: z.string().nonempty({ message: "LGA is required" }),
