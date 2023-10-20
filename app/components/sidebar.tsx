@@ -1,9 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useContext } from "react";
 import Link from "next/link";
-import { Sidebar as ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
+import { usePathname } from "next/navigation";
+import {
+  Sidebar as ProSidebar,
+  Menu,
+  MenuItem,
+  menuClasses,
+  sidebarClasses,
+} from "react-pro-sidebar";
+import { ChevronLeft } from "lucide-react";
 
+import { Button } from "@/app/components/ui/button";
+import { cn } from "@/app/utils";
+import {
+  SidebarWidthContext,
+  type SidebarWidthContextProps,
+} from "@/app/context/sidebarWidthProvider";
 import Logo from "./svg/logo";
 import {
   DashboardIcon,
@@ -13,7 +27,6 @@ import {
   TeamIcon,
   UserIcon,
 } from "./svg";
-import { cn } from "../utils";
 
 const SIDEBARITEMS = [
   {
@@ -49,30 +62,36 @@ const SIDEBARITEMS = [
 ];
 
 export default function Sidebar({ name }: { name: string }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [toggled, setToggled] = useState(false);
-  const [broken, setBroken] = useState(false);
+  const { collapsed, handleCollapsed } =
+    useContext<SidebarWidthContextProps>(SidebarWidthContext);
 
   return (
     <>
       <ProSidebar
         rootStyles={{
+          position: "fixed",
+          bottom: 0,
+          top: 0,
+          left: 0,
           color: "white",
-          height: "100%",
+          backgroundColor: "#272E2D",
+          ["." + sidebarClasses.container]: {
+            height: "100%",
+          },
         }}
         collapsed={collapsed}
-        toggled={toggled}
-        onBreakPoint={setBroken}
-        onBackdropClick={() => setToggled(false)}
+        // toggled={toggled}
+        // onBreakPoint={setBroken}
+        // onBackdropClick={handleToggled}
+        // breakPoint="md"
         backgroundColor="#272E2D"
         width="16rem"
-        breakPoint="sm"
       >
         <SidebarHeader />
-        <div className="my-8">
+        <div className={cn("transition-all", !collapsed && "my-8 md:my-12")}>
           <h2
             className={cn(
-              "font-bold pr-8 pl-16 py-6",
+              "font-bold transition-opacity py-6 delay-200 pr-8 pl-16",
               collapsed && "opacity-0"
             )}
           >
@@ -80,51 +99,68 @@ export default function Sidebar({ name }: { name: string }) {
           </h2>
           <SidebarMenu />
         </div>
-        <button className="sb-button" onClick={() => setCollapsed(!collapsed)}>
-          Collapse
-        </button>
       </ProSidebar>
-      {broken && (
-        <button className="sb-button" onClick={() => setToggled(!toggled)}>
-          Toggle
-        </button>
-      )}
+      <Button
+        variant="outline"
+        className={cn(
+          "rounded-full absolute h-8 w-8 items-center justify-center p-0 top-3 z-20 duration-300 transition-all",
+          collapsed ? "left-16" : "left-[15rem]"
+          // broken ? "hidden" : "flex"
+        )}
+        onClick={handleCollapsed}
+      >
+        {
+          <ChevronLeft
+            className={cn(
+              "w-5 h-5 text-primary transition-transform",
+              collapsed && "rotate-180"
+            )}
+          />
+        }
+      </Button>
     </>
   );
 }
 
 const SidebarHeader = () => {
   return (
-    <div className="flex items-center px-5 h-16">
-      <div className="w-full overflow-hidden flex items-center gap-3">
+    <Link href="/dashboard" className="flex items-center px-5 h-14 sm:h-16">
+      <span className="w-full overflow-hidden flex items-center gap-3">
         <Logo />
         <h1 className="truncate font-bold text-xl">Skippa</h1>
-      </div>
-    </div>
+      </span>
+    </Link>
   );
 };
 
 const SidebarMenu = () => {
-  const menuItemStyles = {
-    root: {
-      fontSize: "16px",
-      fontWeight: 700,
-      color: "white",
-    },
-    button: {
-      height: "4rem",
-      "&:hover": {
-        backgroundColor: "#4AB9AD",
-      },
-    },
-  };
+  const pathname = usePathname();
+  // const pattern = `^${pathname}(/[\\w/-]+)?$`;
+  // const regex = new RegExp(pattern);
 
   return (
-    <Menu menuItemStyles={menuItemStyles}>
+    <Menu
+      rootStyles={{
+        ["." + menuClasses.button]: {
+          height: "4rem",
+          fontSize: "16px",
+          fontWeight: 700,
+          color: "white",
+          borderTop: "1px solid rgba(39, 52, 48, 1)",
+          "&:hover": {
+            backgroundColor: "#4AB9AD",
+          },
+        },
+        ["." + menuClasses.active]: {
+          backgroundColor: "#4AB9AD",
+        },
+      }}
+    >
       {SIDEBARITEMS.map((item, i) => (
         <MenuItem
           key={i}
-          component={<Link href={item.href} />}
+          active={item.href === pathname}
+          component={<Link href={item.href} title={item.label} />}
           icon={item.icon}
         >
           {item.label}

@@ -258,7 +258,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="pvc">Permanent Voters Card</SelectItem>
+                  <SelectItem value="bvn">Bank Verification Number</SelectItem>
                   <SelectItem value="passport">
                     International Passport
                   </SelectItem>

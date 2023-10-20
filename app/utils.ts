@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function splitCamelCaseText(str: string) {
+export function splitCamelCaseText(str?: string) {
+  if (!str) return;
   return str.split(/(?=[A-Z]+|[0-9]+)/).join(" ");
 }
 
@@ -51,4 +52,8 @@ export function dobRange() {
   const dateFrom = new Date().getFullYear() - 70;
   const defaultMonth = new Date(dateTo, new Date().getMonth());
   return { dateFrom, dateTo, defaultMonth };
+}
+
+export function isObjectEmpty(obj: Object) {
+  return Object.keys(obj).length === 0 && obj.constructor === Object;
 }

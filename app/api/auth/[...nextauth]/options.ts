@@ -21,11 +21,20 @@ export const authOptions: NextAuthOptions = {
           );
         }
 
-        const { id, firstName, lastName, email, status, role } = data.data.user;
+        console.log(data.data.user);
+        const {
+          id,
+          firstName,
+          lastName,
+          mobile: phone,
+          email,
+          businessType: type,
+          role,
+        } = data.data.user;
         const name = firstName + " " + lastName;
         const accessToken = data.data.token;
         const createToken = data.data.user.customerAccountCreationToken;
-        return { accessToken, id, name, email, status, createToken, role };
+        return { accessToken, id, name, email, type, createToken, role, phone };
       },
     }),
   ],
@@ -38,6 +47,8 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = user.accessToken;
         token.createToken = user.createToken;
         token.role = user.role;
+        token.phone = user.phone;
+        token.type = user.type;
       }
       return token;
     },
@@ -46,6 +57,8 @@ export const authOptions: NextAuthOptions = {
         session.token = token.accessToken;
         session.user.id = token.sub as string;
         session.user.role = token.role;
+        session.user.phone = token.phone;
+        session.user.type = token.type;
       }
       return session;
     },

@@ -114,10 +114,6 @@ export default function VerifyBusinessForm() {
 
   const { toast } = useToast();
 
-  console.log(form.formState.isValid);
-  console.log(form.getValues());
-  console.log(form.formState.errors);
-
   async function handleBVSubmit(formData: BVFormData) {
     try {
       const data = {

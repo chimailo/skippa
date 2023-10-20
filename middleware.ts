@@ -4,7 +4,12 @@ import { NextResponse } from "next/server";
 export default withAuth(
   // `withAuth` augments your `Request` with the user's token.
   function middleware(req) {
-    // console.log();
+    if (
+      req.nextUrl.pathname === "/onboarding" &&
+      req.nextauth.token?.type === "admin"
+    ) {
+      return NextResponse.redirect(new URL("/profile"));
+    }
   },
   {
     pages: {
@@ -12,11 +17,10 @@ export default withAuth(
     },
     callbacks: {
       authorized: ({ req, token }) => {
-        console.log("callback token:", token);
         return !!token?.accessToken;
       },
     },
   }
 );
 
-export const config = { matcher: ["/onboarding"] };
+export const config = { matcher: ["/onboarding", "/profile/:path*"] };

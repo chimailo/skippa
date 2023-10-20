@@ -6,6 +6,9 @@ declare module "next-auth" {
     token: string;
     user: {
       id: string;
+      phone: string;
+      type: "admin" | "business" | "individual";
+      dateAdded: string;
       role: Record<string, string | string[]>;
     } & DefaultSession["user"];
   }
@@ -15,6 +18,9 @@ declare module "next-auth/jwt" {
   interface JWT {
     accessToken: string;
     creteToken: string;
+    dateAdded: string;
+    phone: string;
     role: Record<string, string | string[]>;
+    type: "admin" | "business" | "individual";
   }
 }
