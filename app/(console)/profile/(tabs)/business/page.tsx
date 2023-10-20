@@ -36,7 +36,7 @@ export default async function Profile() {
           {session.user.type === "business" ? (
             <BusinessForm user={{ ...session.user, token: session.token }} />
           ) : (
-            <IndividualForm token={{ ...session.user, token: session.token }} />
+            <IndividualForm user={{ ...session.user, token: session.token }} />
           )}
         </section>
       ) : (
