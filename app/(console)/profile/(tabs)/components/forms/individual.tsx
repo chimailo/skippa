@@ -115,8 +115,10 @@ export default function MerchantForm({
       localStorage.getItem("vPapers") as string
     );
 
-    setPassport(passport);
-    form.setValue("image", passport?.url);
+    if (passport) {
+      setPassport(passport);
+      form.setValue("image", passport.url);
+    }
 
     if (vPapers) {
       const papers = vPapers.map((paper) => ({

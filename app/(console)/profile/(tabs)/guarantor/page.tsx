@@ -23,15 +23,15 @@ export default async function Profile() {
   let guarantor = { email: "", firstName: "", lastName: "" };
   const session = await getServerSession(authOptions);
 
-  // if (session?.token) {
-  //   const merchant = await fetchGuarantor(session.token, session.user.id);
-  //   console.log(merchant);
-  //   guarantor = {
-  //     email: merchant.contactInformation.email,
-  //     firstName: merchant.contactInformation.firstName,
-  //     lastName: merchant.contactInformation.lastName,
-  //   };
-  // }
+  if (session?.token) {
+    const merchant = await fetchGuarantor(session.token, session.user.id);
+    console.log(merchant);
+    guarantor = {
+      email: merchant.contactInformation.email,
+      firstName: merchant.contactInformation.firstName,
+      lastName: merchant.contactInformation.lastName,
+    };
+  }
 
   return (
     <div className="py-5 sm:border-l-2 border-zinc-300 flex-1">

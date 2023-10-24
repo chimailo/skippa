@@ -23,10 +23,10 @@ const fetchMerchant = async (token: string, id: string) => {
 export default async function Profile() {
   const session = await getServerSession(authOptions);
 
-  //   if (session?.token) {
-  //     const merchant = await fetchMerchant(session.token, session.user.id);
-  //     console.log(merchant);
-  //   }
+  if (session?.token) {
+    const merchant = await fetchMerchant(session.token, session.user.id);
+    console.log(merchant);
+  }
 
   return (
     <div className="py-5 sm:border-l-2 border-zinc-300 flex-1">

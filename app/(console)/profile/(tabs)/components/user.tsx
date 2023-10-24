@@ -52,10 +52,10 @@ export default function UserSection() {
         </Link>
         {data?.user.type !== "admin" && status !== "loading" && (
           <Link
-            href="/profile/business"
+            href="/profile/merchants"
             className={cn(
               "text-sm transition-colors rounded-md w-full font-bold text-white py-3 inline-flex items-center justify-center",
-              pathname === "/profile/business"
+              pathname === "/profile/merchants"
                 ? "bg-primary pointer-events-none"
                 : " bg-primary-darker-muted/80 hover:bg-primary-darker-muted"
             )}

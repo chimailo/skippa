@@ -162,33 +162,6 @@ export default function UserForm({
             )}
           />
         </div>
-        <div className="w-full flex justify-end">
-          {isEditing ? (
-            <Button
-              disabled={form.formState.isSubmitting || !form.formState.isValid}
-              size="lg"
-              className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
-            >
-              Submit
-              {form.formState.isSubmitting && (
-                <Spinner
-                  twColor="text-white before:bg-white"
-                  twSize="w-4 h-4"
-                  className="ml-3"
-                />
-              )}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="lg"
-              className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </Button>
-          )}
-        </div>
       </form>
     </Form>
   );
