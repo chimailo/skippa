@@ -20,7 +20,7 @@ export default function AuthHeader() {
 
   return (
     <header role="banner" className="flex flex-shrink-0 h-14 bg-primary-darker">
-      <Container className={cn("flex items-center w-full gap-4")} compact>
+      <Container className={cn("flex items-center w-full gap-4")}>
         {/* {broken && (
           <>
             <Button

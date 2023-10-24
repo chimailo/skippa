@@ -1,11 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
 
-import { Button } from "@/app/components/ui/button";
 import Container from "@/app/components/container";
+import Logo from "@/app/components/svg/logo";
 
 export default function Header() {
   return (
@@ -14,33 +12,10 @@ export default function Header() {
       className="flex flex-shrink-0 h-14 sm:h-16 border-b border-gray-300"
     >
       <Container className="flex items-center w-full gap-4" compact>
-        <Link
-          className="flex place-items-center gap-2 text-primary font-serif shrink-0 font-bold text-2xl uppercase"
-          href="/"
-        >
-          Skippa
-          {/* <Image
-            src="/vercel.svg"
-            alt="Skippa's Logo"
-            width={180}
-            height={40}
-            priority
-          /> */}
+        <Link href="/" className="flex items-center gap-3 text-primary">
+          <Logo />
+          <h1 className="truncate font-bold text-xl">Skippa</h1>
         </Link>
-        <div className="flex-1 justify-end flex">
-          <Button
-            variant="outline"
-            className="font-semibold"
-            onClick={() =>
-              signOut({
-                redirect: true,
-                callbackUrl: "/login",
-              })
-            }
-          >
-            Sign Out
-          </Button>
-        </div>
       </Container>
     </header>
   );
