@@ -110,8 +110,11 @@ export default function MerchantForm({
     const passport: Record<string, string> = JSON.parse(
       localStorage.getItem("passport") as string
     );
-    setPassport(passport);
-    form.setValue("directorDetail.image", passport.url);
+
+    if (passport) {
+      setPassport(passport);
+      form.setValue("directorDetail.image", passport.url);
+    }
   }, []);
 
   const convertBase64 = (file: File) => {
@@ -404,7 +407,7 @@ export default function MerchantForm({
               <FormItem className="">
                 <div className="flex items-center">
                   <FormLabel className="after:text-red-600 after:ml-1 after:content-['*'] after:text-xl after:leading-none flex-1">
-                    Vehicle Papers
+                    Passport Photo
                   </FormLabel>
                   {isImageUploading && (
                     <Spinner

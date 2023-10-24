@@ -84,7 +84,6 @@ export default function VerifyAccountForm() {
   const handleResendCode = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
-    e.preventDefault();
     setResending(true);
 
     if (!email) {
@@ -108,7 +107,7 @@ export default function VerifyAccountForm() {
       setOtp("");
       setTimer(TIMEOUT);
       const token = res.data.accountCreationToken;
-      router.push(`/register/verify-account?token=${token}&email=${email}`);
+      router.push(`/signup/verify-account?token=${token}&email=${email}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -267,7 +266,8 @@ export default function VerifyAccountForm() {
               <Button
                 type="button"
                 variant="ghost"
-                className="sm:text-xl ml-1 text-base"
+                className="sm:text-lg ml-1 text-base text-primary hover:text-primary"
+                disabled={timer > 0 || isResending}
                 onClick={(e) => handleResendCode(e)}
               >
                 Resend code
