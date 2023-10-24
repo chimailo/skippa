@@ -135,8 +135,13 @@ const SidebarHeader = () => {
 
 const SidebarMenu = () => {
   const pathname = usePathname();
-  // const pattern = `^${pathname}(/[\\w/-]+)?$`;
-  // const regex = new RegExp(pattern);
+
+  const isActive = (item: string) => {
+    const pattern = `^${item}(/[\\w/-]+)?$`;
+    const regex = new RegExp(pattern);
+    console.log(regex.test(pathname));
+    return regex.test(pathname);
+  };
 
   return (
     <Menu
@@ -159,7 +164,7 @@ const SidebarMenu = () => {
       {SIDEBARITEMS.map((item, i) => (
         <MenuItem
           key={i}
-          active={item.href === pathname}
+          active={isActive(item.href)}
           component={<Link href={item.href} title={item.label} />}
           icon={item.icon}
         >
