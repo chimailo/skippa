@@ -31,7 +31,7 @@ type FormDataType = UseFormReturn<
     vehicleNumber: string;
     driversLicense: string;
     dateOfBirth: Date;
-    image?: string;
+    image: string;
     guarantorDetail: {
       lastName: string;
       firstName: string;
@@ -110,8 +110,10 @@ export default function BusinessVerificationForm1({ form }: Props) {
       localStorage.getItem("vPapers") as string
     );
 
-    setPassport(passport);
-    form.setValue("image", passport?.url);
+    if (passport) {
+      setPassport(passport);
+      form.setValue("image", passport.url);
+    }
 
     if (vPapers) {
       const papers = vPapers.map((paper) => ({

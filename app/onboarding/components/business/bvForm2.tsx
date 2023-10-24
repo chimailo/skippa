@@ -33,6 +33,7 @@ type FormDataType = UseFormReturn<
     directorDetail: {
       idNumber: string;
       idType: string;
+      image: string;
       firstName: string;
       lastName: string;
       dateOfBirth: Date;

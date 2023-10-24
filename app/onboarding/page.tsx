@@ -126,23 +126,22 @@ export default function VerifyBusinessForm() {
         ),
       };
 
-      console.log(data);
-      const res = await verifyBusiness(data, session.data?.token);
+      await verifyBusiness(data, session.data?.token);
 
-      if (!res.success) {
-        toast({
-          variant: "destructive",
-          title: splitCamelCaseText(res.name) || undefined,
-          description:
-            res.data[0].message ||
-            "There was a problem with your request, please try again",
-        });
-        return;
-      }
+      // if (!res.success) {
+      //   toast({
+      //     variant: "destructive",
+      //     title: splitCamelCaseText(res.name) || undefined,
+      //     description:
+      //       res.data[0].message ||
+      //       "There was a problem with your request, please try again",
+      //   });
+      //   return;
+      // }
 
-      form.reset();
+      // form.reset();
       localStorage.removeItem("passport");
-      router.push("/dashboard");
+      router.push("/onboarding/welcome");
     } catch (error) {
       toast({
         variant: "destructive",
@@ -154,23 +153,22 @@ export default function VerifyBusinessForm() {
 
   async function handleIVSubmit(formData: IVFormData) {
     try {
-      const res = await verifyIBusiness(formData, session.data?.token);
+      await verifyIBusiness(formData, session.data?.token);
 
-      if (!res.success) {
-        toast({
-          variant: "destructive",
-          title: splitCamelCaseText(res.name) || undefined,
-          description:
-            res.data[0].message ||
-            "There was a problem with your request, please try again",
-        });
-        return;
-      }
+      // if (!res.success) {
+      //   toast({
+      //     variant: "destructive",
+      //     title: splitCamelCaseText(res.name) || undefined,
+      //     description:
+      //       res.data[0].message ||
+      //       "There was a problem with your request, please try again",
+      //   });
+      //   return;
+      // }
 
-      form.reset();
       localStorage.removeItem("passport");
       localStorage.removeItem("vPapers");
-      router.push("/dashboard");
+      router.push("/onboarding/welcome");
     } catch (error) {
       toast({
         variant: "destructive",

@@ -48,7 +48,7 @@ type FormDataType = UseFormReturn<
       idType: string;
       firstName: string;
       lastName: string;
-      image?: string;
+      image: string;
       dateOfBirth: Date;
     };
     addressDetail: {
@@ -98,8 +98,11 @@ export default function BusinessVerificationForm1({ form }: Props) {
     const passport: Record<string, string> = JSON.parse(
       localStorage.getItem("passport") as string
     );
-    setPassport(passport);
-    form.setValue("directorDetail.image", passport.url);
+
+    if (passport) {
+      setPassport(passport);
+      form.setValue("directorDetail.image", passport.url);
+    }
   }, []);
 
   const convertBase64 = (file: File) => {
@@ -262,7 +265,9 @@ export default function BusinessVerificationForm1({ form }: Props) {
                   <SelectItem value="passport">
                     International Passport
                   </SelectItem>
-                  <SelectItem value="license">Driver&apos;s License</SelectItem>
+                  <SelectItem value="drivers_license">
+                    Driver&apos;s License
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -338,7 +343,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
             <FormItem className="">
               <div className="flex items-center">
                 <FormLabel className="after:text-red-600 after:ml-1 after:content-['*'] after:text-xl after:leading-none flex-1">
-                  Vehicle Papers
+                  Passport Photo
                 </FormLabel>
                 {isImageUploading && (
                   <Spinner

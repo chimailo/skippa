@@ -107,7 +107,7 @@ export const BVFormSchema = z.object({
     dateOfBirth: z
       .date()
       .refine((val) => Boolean(val), { message: "Date of birth is required" }),
-    image: z.string().optional(),
+    image: z.string(),
   }),
   addressDetail: z.object({
     flatNumber: z.string().optional(),
@@ -158,7 +158,7 @@ export const IVFormSchema = z.object({
       .min(2, "Last Name must be at least 2 characters long")
       .max(64, "Last Name cannot be more than 64 characters"),
   }),
-  image: z.string().optional(),
+  image: z.string(),
   vehiclePapers: z
     .object({
       vehicalPaperImages: z.string().url(),
