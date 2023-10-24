@@ -65,9 +65,8 @@ export default function ForgotPasswordForm() {
         return;
       }
 
-      console.log(res);
       form.reset();
-      setAlert(res.data.message);
+      setAlert(true);
     } catch (error) {
       toast({
         variant: "destructive",
