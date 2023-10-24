@@ -25,9 +25,10 @@ import { useToast } from "@/app/components/ui/use-toast";
 import Spinner from "@/app/components/loading";
 import { splitCamelCaseText } from "@/app/utils";
 
-export type FormDataType = z.infer<typeof FormSchema>;
+export type BFormData = z.infer<typeof BFormSchema>;
+export type IFormData = z.infer<typeof IFormSchema>;
 
-const FormSchema = z
+const BFormSchema = z
   .object({
     firstName: z
       .string()
@@ -98,14 +99,80 @@ const FormSchema = z
     path: ["confirmPassword"],
   });
 
+const IFormSchema = z
+  .object({
+    firstName: z
+      .string()
+      .nonempty({ message: "First Name is required" })
+      .min(2, "First Name must be at least 2 characters long")
+      .max(64, "First Name cannot be more than 64 characters long"),
+    lastName: z
+      .string()
+      .nonempty({ message: "Last Name is required" })
+      .min(2, "Last Name must be at least 2 characters long")
+      .max(64, "Last Name cannot be more than 64 characters long"),
+    email: z
+      .string()
+      .nonempty({ message: "Email is required" })
+      .email({ message: "Invalid email" }),
+    mobile: z
+      .string()
+      .nonempty({ message: "Phone number is required" })
+      .length(11, "Phone number must be of length 11 digits"),
+    country: z.string().nonempty({ message: "Country is required" }),
+    state: z.string().nonempty({ message: "State is required" }),
+    password: z
+      .string()
+      .nonempty({ message: "Password is required" })
+      .min(8, "Password must be at least 8 characters long")
+      .superRefine((val, ctx) => {
+        if (!/\d/.test(val)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Password must contain a digit",
+          });
+        }
+        if (!/[a-z]/.test(val)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Password must contain at least a lowercase letter",
+          });
+        }
+        if (!/[A-Z]/.test(val)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Password must contain at least a uppercase letter",
+          });
+        }
+        if (!/[!@#$%&*]/.test(val)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Password must contain at least a special character !@#$%&*",
+          });
+        }
+      }),
+    confirmPassword: z
+      .string()
+      .nonempty({ message: "Confirm Password is required" }),
+    terms: z.boolean().refine((val) => val, {
+      message:
+        "You must agree to the terms and conditions to create an account",
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password and Confirm Password do not match",
+    path: ["confirmPassword"],
+  });
+
 const createMerchant = async (
-  formData: Omit<FormDataType, "terms"> & { type: string | null }
+  formData: Omit<BFormData | IFormData, "terms"> & { type: string | null }
 ) => {
-  const { companyName, ...form } = formData;
-  const body = formData.type === "business" ? formData : form;
+  // const { companyName, ...form } = formData;
+  // const body = formData.type === "business" ? formData : form;
   const res = await fetch(`/api/merchants/create`, {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify(formData),
   });
   const { data } = await res.json();
 
@@ -116,11 +183,14 @@ export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+
   const search = useSearchParams();
-  const form = useForm<FormDataType>({
-    resolver: zodResolver(FormSchema),
+  const type = search.get("type");
+
+  const form = useForm<BFormData | IFormData>({
+    resolver: zodResolver(type === "business" ? BFormSchema : IFormSchema),
     mode: "onBlur",
-    values: {
+    defaultValues: {
       firstName: "",
       lastName: "",
       companyName: "",
@@ -134,7 +204,6 @@ export default function SignUpForm() {
     },
   });
   const { toast } = useToast();
-  const type = search.get("type");
 
   if (!type) {
     router.push("/");
@@ -146,7 +215,7 @@ export default function SignUpForm() {
     document.cookie = `${name}=${encodePayload}; max-age=3600;`;
   };
 
-  async function onSubmit(formData: FormDataType) {
+  async function onSubmit(formData: BFormData | IFormData) {
     try {
       const { terms, ...rest } = formData;
       const res = await createMerchant({ ...rest, type });
@@ -170,7 +239,7 @@ export default function SignUpForm() {
       saveToCookie("password", formData.password);
       form.reset();
       router.push(
-        `/register/verify-account?token=${res.data.accountCreationToken}&email=${formData.email}`
+        `/signup/verify-account?token=${res.data.accountCreationToken}&email=${formData.email}`
       );
     } catch (error) {
       toast({
@@ -220,7 +289,7 @@ export default function SignUpForm() {
               )}
             />
           </div>
-          {type === "individual" && (
+          {type === "business" && (
             <FormField
               control={form.control}
               name="companyName"
@@ -384,7 +453,7 @@ export default function SignUpForm() {
           />
           <div className="space-y-4">
             <Button
-              disabled={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting || !form.formState.isValid}
               size="lg"
               className="w-full font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
             >
