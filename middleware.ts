@@ -8,7 +8,8 @@ export default withAuth(
       req.nextUrl.pathname === "/onboarding" &&
       req.nextauth.token?.type === "admin"
     ) {
-      return NextResponse.redirect(new URL("/profile"));
+      console.log(req.url);
+      return NextResponse.redirect(new URL("/profile", req.url));
     }
   },
   {
@@ -16,7 +17,7 @@ export default withAuth(
       signIn: "/login",
     },
     callbacks: {
-      authorized: ({ req, token }) => {
+      authorized: ({ token }) => {
         return !!token?.accessToken;
       },
     },
