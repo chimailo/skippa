@@ -62,7 +62,6 @@ export default function UserForm({
 }: {
   user: Session["user"] & { token: string };
 }) {
-  const [isEditing, setEditing] = useState(false);
   const form = useForm<FormDataType>({
     resolver: zodResolver(FormSchema),
     mode: "onBlur",
@@ -116,7 +115,7 @@ export default function UserForm({
               <FormItem className="w-full col-span-1">
                 <FormLabel className="">First Name</FormLabel>
                 <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
+                  <Input type="text" {...field} disabled />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -129,7 +128,7 @@ export default function UserForm({
               <FormItem className="w-full col-span-1">
                 <FormLabel className="">Last Name</FormLabel>
                 <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
+                  <Input type="text" {...field} disabled />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -142,7 +141,7 @@ export default function UserForm({
               <FormItem className="w-full col-span-1">
                 <FormLabel className="">Email</FormLabel>
                 <FormControl>
-                  <Input type="email" {...field} disabled={!isEditing} />
+                  <Input type="email" {...field} disabled />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -155,7 +154,7 @@ export default function UserForm({
               <FormItem className="w-full col-span-1">
                 <FormLabel className="">Phone Number</FormLabel>
                 <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
+                  <Input type="text" {...field} disabled />
                 </FormControl>
                 <FormMessage />
               </FormItem>

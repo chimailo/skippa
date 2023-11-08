@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const { token, ...body } = await request.json();
+  const { id, token, ...body } = await request.json();
   const res = await fetch(
-    `${process.env.baseUrl}/merchants/individual/account/verification`,
+    `${process.env.baseUrl}/merchants/individual/${id}/guarantor/${token}/verification`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(body),
     }

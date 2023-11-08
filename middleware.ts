@@ -2,15 +2,21 @@ import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
 export default withAuth(
-  // `withAuth` augments your `Request` with the user's token.
   function middleware(req) {
-    if (
-      req.nextUrl.pathname === "/onboarding" &&
-      req.nextauth.token?.type === "admin"
-    ) {
-      console.log(req.url);
-      return NextResponse.redirect(new URL("/profile", req.url));
-    }
+    // const session = req.nextauth.token;
+    // const businessCookie = req.cookies.get("business")?.value;
+    // console.log(businessCookie);
+    // if (session && businessCookie) {
+    //   session.business = JSON.parse(businessCookie);
+    // }
+    // console.log(session?.business);
+    // if (
+    //   !req.nextUrl.pathname.includes("/onboarding") &&
+    //   !session?.business.verificationChecks &&
+    //   session?.type !== "admin"
+    // ) {
+    //   return NextResponse.redirect(new URL("/onboarding", req.url));
+    // }
   },
   {
     pages: {
@@ -24,4 +30,6 @@ export default withAuth(
   }
 );
 
-export const config = { matcher: ["/onboarding", "/profile/:path*"] };
+export const config = {
+  matcher: ["/onboarding", "/profile/:path*", "/partners/:path*"],
+};

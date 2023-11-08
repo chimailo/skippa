@@ -12,7 +12,7 @@ export default async function Signup() {
 
   if (session?.token) {
     // Redirect if user is logged in
-    redirect("/onboarding");
+    redirect("/profile");
   }
 
   return (

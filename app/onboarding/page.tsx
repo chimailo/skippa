@@ -179,146 +179,143 @@ export default function VerifyBusinessForm() {
   }
 
   return (
-    <>
-      <Header />
-      <Container compact>
-        <div className="shadow-3xl rounded-lg py-6 px-5 sm:px-8 md:py-8 xl:px-12 my-6 md:my-9 min-h-[calc(100vh_-_8rem)]">
-          <div className=" mb-6 md:mb-9">
-            <h1 className="text-3xl text-primary font-bold">Business</h1>
-            <h1 className="text-3xl text-primary font-bold">Verification</h1>
-          </div>
-          {isLoading && (
-            <div className="w-full py-12 md:py-24 flex items-center justify-center">
-              <Spinner
-                twColor="text-primary before:bg-primary"
-                twSize="w-8 h-8"
-              />
-            </div>
-          )}
-          {isBusiness && (
-            <Form {...bvForm}>
-              <form
-                onSubmit={bvForm.handleSubmit(handleBVSubmit)}
-                className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
-              >
-                {page === 1 ? (
-                  <BusinessVerificationForm1 form={bvForm} />
-                ) : (
-                  <BusinessVerificationForm2
-                    form={bvForm}
-                    setSocMedia={setSocialMedia}
-                    socMedia={socialMedia}
-                  />
-                )}
-                <div className="my-4 flex justify-between items-center flex-row-reverse">
-                  {page === NUM_OF_FORM_PAGES ? (
-                    <Button
-                      disabled={
-                        form.formState.isSubmitting || !form.formState.isValid
-                      }
-                      size="lg"
-                      className="font-semibold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
-                    >
-                      Submit
-                      {form.formState.isSubmitting && (
-                        <Spinner
-                          twColor="text-white before:bg-white"
-                          twSize="w-4 h-4"
-                          className="ml-3"
-                        />
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="lg"
-                      className="font-semibold text-lg hover:bg-primary hover:opacity-90 transition-opacity"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage(page + 1);
-                      }}
-                    >
-                      Next
-                    </Button>
-                  )}
-                  {page > 1 && (
-                    <Button
-                      type="button"
-                      size="lg"
-                      className="font-semibold text-lg hover:bg-primary hover:opacity-90 transition-opacity"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage(page - 1);
-                      }}
-                    >
-                      Previous
-                    </Button>
-                  )}
-                </div>
-              </form>
-            </Form>
-          )}
-          {isIndividual && (
-            <Form {...ivForm}>
-              <form
-                onSubmit={ivForm.handleSubmit(handleIVSubmit)}
-                className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
-              >
-                {page === 1 ? (
-                  <IndividualVerificationForm1 form={ivForm} />
-                ) : (
-                  <IndividualVerificationForm2 form={ivForm} />
-                )}
-                <div className="my-4 flex justify-between items-center flex-row-reverse">
-                  {page === NUM_OF_FORM_PAGES ? (
-                    <Button
-                      disabled={
-                        form.formState.isSubmitting || !form.formState.isValid
-                      }
-                      size="lg"
-                      className="font-semibold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
-                    >
-                      Submit
-                      {form.formState.isSubmitting && (
-                        <Spinner
-                          twColor="text-white before:bg-white"
-                          twSize="w-4 h-4"
-                          className="ml-3"
-                        />
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="lg"
-                      className="font-semibold text-lg hover:bg-primary hover:opacity-90 transition-opacity"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage(page + 1);
-                      }}
-                    >
-                      Next
-                    </Button>
-                  )}
-                  {page > 1 && (
-                    <Button
-                      type="button"
-                      size="lg"
-                      className="font-semibold text-lg hover:bg-primary hover:opacity-90 transition-opacity"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage(page - 1);
-                      }}
-                    >
-                      Previous
-                    </Button>
-                  )}
-                </div>
-              </form>
-            </Form>
-          )}
+    <Container compact>
+      <div className="shadow-3xl rounded-lg py-6 px-5 sm:px-8 md:py-8 xl:px-12 my-6 md:my-9 min-h-[calc(100vh_-_8rem)]">
+        <div className=" mb-6 md:mb-9">
+          <h1 className="text-3xl text-primary font-bold">Business</h1>
+          <h1 className="text-3xl text-primary font-bold">Verification</h1>
         </div>
-      </Container>
-    </>
+        {isLoading && (
+          <div className="w-full py-12 md:py-24 flex items-center justify-center">
+            <Spinner
+              twColor="text-primary before:bg-primary"
+              twSize="w-8 h-8"
+            />
+          </div>
+        )}
+        {isBusiness && (
+          <Form {...bvForm}>
+            <form
+              onSubmit={bvForm.handleSubmit(handleBVSubmit)}
+              className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
+            >
+              {page === 1 ? (
+                <BusinessVerificationForm1 form={bvForm} />
+              ) : (
+                <BusinessVerificationForm2
+                  form={bvForm}
+                  setSocMedia={setSocialMedia}
+                  socMedia={socialMedia}
+                />
+              )}
+              <div className="my-4 flex justify-between items-center flex-row-reverse">
+                {page === NUM_OF_FORM_PAGES ? (
+                  <Button
+                    disabled={
+                      form.formState.isSubmitting || !form.formState.isValid
+                    }
+                    size="lg"
+                    className="font-semibold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
+                  >
+                    Submit
+                    {form.formState.isSubmitting && (
+                      <Spinner
+                        twColor="text-white before:bg-white"
+                        twSize="w-4 h-4"
+                        className="ml-3"
+                      />
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="font-semibold text-lg hover:bg-primary hover:opacity-90 transition-opacity"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(page + 1);
+                    }}
+                  >
+                    Next
+                  </Button>
+                )}
+                {page > 1 && (
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="font-semibold text-lg hover:bg-primary hover:opacity-90 transition-opacity"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(page - 1);
+                    }}
+                  >
+                    Previous
+                  </Button>
+                )}
+              </div>
+            </form>
+          </Form>
+        )}
+        {isIndividual && (
+          <Form {...ivForm}>
+            <form
+              onSubmit={ivForm.handleSubmit(handleIVSubmit)}
+              className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
+            >
+              {page === 1 ? (
+                <IndividualVerificationForm1 form={ivForm} />
+              ) : (
+                <IndividualVerificationForm2 form={ivForm} />
+              )}
+              <div className="my-4 flex justify-between items-center flex-row-reverse">
+                {page === NUM_OF_FORM_PAGES ? (
+                  <Button
+                    disabled={
+                      form.formState.isSubmitting || !form.formState.isValid
+                    }
+                    size="lg"
+                    className="font-semibold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
+                  >
+                    Submit
+                    {form.formState.isSubmitting && (
+                      <Spinner
+                        twColor="text-white before:bg-white"
+                        twSize="w-4 h-4"
+                        className="ml-3"
+                      />
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="font-semibold text-lg hover:bg-primary hover:opacity-90 transition-opacity"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(page + 1);
+                    }}
+                  >
+                    Next
+                  </Button>
+                )}
+                {page > 1 && (
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="font-semibold text-lg hover:bg-primary hover:opacity-90 transition-opacity"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(page - 1);
+                    }}
+                  >
+                    Previous
+                  </Button>
+                )}
+              </div>
+            </form>
+          </Form>
+        )}
+      </div>
+    </Container>
   );
 }

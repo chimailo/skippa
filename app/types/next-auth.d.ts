@@ -10,6 +10,9 @@ declare module "next-auth" {
       type: "admin" | "business" | "individual";
       dateAdded: string;
       role: Record<string, string | string[]>;
+      completedSignUp: boolean;
+      business: any;
+      guarantor?: any;
     } & DefaultSession["user"];
   }
 }
@@ -22,5 +25,7 @@ declare module "next-auth/jwt" {
     phone: string;
     role: Record<string, string | string[]>;
     type: "admin" | "business" | "individual";
+    completedSignUp: boolean;
+    business: any;
   }
 }

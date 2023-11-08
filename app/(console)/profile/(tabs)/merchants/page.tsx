@@ -6,27 +6,24 @@ import Spinner from "@/app/components/loading";
 
 const fetchMerchant = async (token: string, id: string) => {
   const res = await fetch(`${process.env.baseUrl}/merchants/${id}`, {
-    method: "POST",
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
   });
 
+  const data = await res.json();
+
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    throw new Error(data.message || "Failed to fetch data");
   }
 
-  return res.json();
+  return data;
 };
 
 export default async function Profile() {
   const session = await getServerSession(authOptions);
-
-  if (session?.token) {
-    const merchant = await fetchMerchant(session.token, session.user.id);
-    console.log(merchant);
-  }
 
   return (
     <div className="py-5 sm:border-l-2 border-zinc-300 flex-1">

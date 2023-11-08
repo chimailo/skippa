@@ -37,9 +37,9 @@ const resendCode = async (email: string) => {
 const FormSchema = z.object({
   email: z
     .string()
-    .nonempty({ message: "Email is required" })
+    .min(1, { message: "Email is required" })
     .email({ message: "Invalid email" }),
-  password: z.string().nonempty({ message: "Password is required" }),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 export default function LoginForm() {
@@ -55,14 +55,14 @@ export default function LoginForm() {
   });
   const { toast } = useToast();
 
-  async function handleVerifyAccount(form: FormDataType, createToken?: string) {
-    await resendCode(form.email);
+  async function handleVerifyAccount(form: FormDataType) {
+    const response = await resendCode(form.email);
+    console.log(response);
+    const token = response.data.accountCreationToken;
     // Create cookie with the user login credentials to use to log
     // them in when they verify their account
     saveToCookie("password", form.password);
-    router.push(
-      `/register/verify-account?createToken=${createToken}&email=${form.email}`
-    );
+    router.push(`/signup/verify-account?token=${token}&email=${form.email}`);
   }
 
   const saveToCookie = (name: string, payload: string) => {
@@ -87,11 +87,9 @@ export default function LoginForm() {
             duration: 1000 * 60 * 2,
             variant: "destructive",
             title: splitCamelCaseText(error.name) || undefined,
-            description:
-              error.message ||
-              "There was a problem with your request, please try again",
+            description: error.message || "Complete your signup process",
           });
-          handleVerifyAccount(formData, error.createToken);
+          handleVerifyAccount(formData);
           return;
         }
 
@@ -106,7 +104,7 @@ export default function LoginForm() {
       }
 
       form.reset();
-      router.push("/onboarding");
+      router.push("/profile");
     } catch (error) {
       toast({
         variant: "destructive",

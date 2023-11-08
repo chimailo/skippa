@@ -18,9 +18,14 @@ import {
 import { useToast } from "@/app/components/ui/use-toast";
 import Spinner from "@/app/components/loading";
 import { Button } from "@/app/components/ui/button";
+import { GuarantorFormSchema } from "@/app/onboarding/helpers";
 import { splitCamelCaseText } from "@/app/utils";
 
 type FormDataType = z.infer<typeof FormSchema>;
+
+type Props = {
+  user: Session["user"] & { token: string };
+};
 
 const FormSchema = z.object({
   firstName: z
@@ -57,32 +62,22 @@ const updateGuarantor = async (formData: FormDataType, token: string) => {
   return data;
 };
 
-export default function UserForm({
-  token,
-  guarantor,
-}: {
-  token: string;
-  guarantor: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-}) {
+export default function UserForm({ user }: Props) {
   const [isEditing, setEditing] = useState(false);
   const form = useForm<FormDataType>({
     resolver: zodResolver(FormSchema),
     mode: "onBlur",
     defaultValues: {
-      firstName: guarantor.firstName,
-      lastName: guarantor.lastName,
-      email: guarantor.email,
+      firstName: user.guarantor?.firstName || "",
+      lastName: user.guarantor?.lastName || "",
+      email: user.guarantor?.email || "",
     },
   });
   const { toast } = useToast();
 
   async function handleSubmit(data: FormDataType) {
     try {
-      const res = await updateGuarantor(data, token);
+      const res = await updateGuarantor(data, user.token);
 
       if (!res?.success) {
         toast({

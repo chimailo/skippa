@@ -22,11 +22,15 @@ import Logo from "./svg/logo";
 import {
   DashboardIcon,
   HelpIcon,
+  BusinessIcon,
+  DeliveryIcon,
+  CustomerIcon,
   ReportIcon,
   SettlementIcon,
   TeamIcon,
   UserIcon,
 } from "./svg";
+import { Session } from "next-auth";
 
 const SIDEBARITEMS = [
   {
@@ -35,19 +39,27 @@ const SIDEBARITEMS = [
     label: "Dashboard",
   },
   {
+    icon: <BusinessIcon />,
+    href: "/partners",
+    label: "Partners",
+    type: "admin",
+  },
+  {
+    icon: <CustomerIcon />,
+    href: "/customers",
+    label: "Customers",
+    type: "admin",
+  },
+  {
     icon: <ReportIcon />,
     href: "/reports",
     label: "Reports",
   },
   {
-    icon: <TeamIcon />,
-    href: "/team",
-    label: "Team",
-  },
-  {
-    icon: <UserIcon />,
-    href: "/profile",
-    label: "Profile",
+    icon: <DeliveryIcon />,
+    href: "/deliveries",
+    label: "Deliveries",
+    type: "individual",
   },
   {
     icon: <SettlementIcon />,
@@ -55,13 +67,24 @@ const SIDEBARITEMS = [
     label: "Settlements",
   },
   {
-    icon: <HelpIcon />,
-    href: "/help",
-    label: "Help & Support",
+    icon: <TeamIcon />,
+    href: "/team",
+    label: "Team",
+    type: "business admin",
+  },
+  {
+    icon: <UserIcon />,
+    href: "/profile",
+    label: "Profile",
+    notRequireVerification: true,
   },
 ];
 
-export default function Sidebar({ name }: { name: string }) {
+type Props = {
+  user: Session["user"];
+};
+
+export default function Sidebar({ user }: Props) {
   const { collapsed, handleCollapsed } =
     useContext<SidebarWidthContextProps>(SidebarWidthContext);
 
@@ -95,16 +118,16 @@ export default function Sidebar({ name }: { name: string }) {
               collapsed && "opacity-0"
             )}
           >
-            {name}
+            {user.business.companyName}
           </h2>
-          <SidebarMenu />
+          <SidebarMenu user={user} />
         </div>
       </ProSidebar>
       <Button
-        variant="outline"
+        variant="ghost"
         className={cn(
-          "rounded-full absolute h-8 w-8 items-center justify-center p-0 top-3 z-20 duration-300 transition-all",
-          collapsed ? "left-16" : "left-[15rem]"
+          "rounded-full absolute h-9 w-9 items-center justify-center p-0 top-3 z-20 duration-300 transition-all hover:bg-primary-dark bg-primary-darker",
+          collapsed ? "left-16" : "left-[14.5rem]"
           // broken ? "hidden" : "flex"
         )}
         onClick={handleCollapsed}
@@ -112,7 +135,7 @@ export default function Sidebar({ name }: { name: string }) {
         {
           <ChevronLeft
             className={cn(
-              "w-5 h-5 text-primary transition-transform",
+              "w-7 h-7 text-white transition-transform",
               collapsed && "rotate-180"
             )}
           />
@@ -133,15 +156,21 @@ const SidebarHeader = () => {
   );
 };
 
-const SidebarMenu = () => {
+const SidebarMenu = ({ user }: { user: Session["user"] }) => {
   const pathname = usePathname();
 
   const isActive = (item: string) => {
     const pattern = `^${item}(/[\\w/-]+)?$`;
     const regex = new RegExp(pattern);
-    console.log(regex.test(pathname));
     return regex.test(pathname);
   };
+
+  const sidebar =
+    user.type === "admin" || user.business.isVerified
+      ? SIDEBARITEMS.filter(
+          (item) => !item.type || item.type.includes(user.type)
+        )
+      : SIDEBARITEMS.filter((item) => item.notRequireVerification);
 
   return (
     <Menu
@@ -161,7 +190,7 @@ const SidebarMenu = () => {
         },
       }}
     >
-      {SIDEBARITEMS.map((item, i) => (
+      {sidebar.map((item, i) => (
         <MenuItem
           key={i}
           active={isActive(item.href)}

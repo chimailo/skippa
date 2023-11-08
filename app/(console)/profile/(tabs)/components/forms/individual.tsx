@@ -23,7 +23,7 @@ import { useToast } from "@/app/components/ui/use-toast";
 import Spinner from "@/app/components/loading";
 import { Button } from "@/app/components/ui/button";
 import { splitCamelCaseText, validatePaper } from "@/app/utils";
-import { IVFormSchema, iVInitialValues } from "@/app/onboarding/helpers";
+import { IProfileFormSchema } from "@/app/onboarding/helpers";
 import {
   Popover,
   PopoverContent,
@@ -42,12 +42,16 @@ function passportLoader({ src, width }: { src: string; width: number }) {
   )}${src}`;
 }
 
-type FormDataType = z.infer<typeof IVFormSchema>;
+type FormDataType = z.infer<typeof IProfileFormSchema>;
 
 export interface SocMedia {
   name: "twitter" | "facebook" | "instagram";
   handle: string;
 }
+
+type Props = {
+  user: Session["user"] & { token: string };
+};
 
 const uploadFiles = async (file: FormData) => {
   return await fetch(`/api/uploads`, {
@@ -86,11 +90,7 @@ const updateMerchant = async (formData: FormDataType, token: string) => {
   return data;
 };
 
-export default function MerchantForm({
-  user,
-}: {
-  user: Session["user"] & { token: string };
-}) {
+export default function MerchantForm({ user }: Props) {
   const [isEditing, setEditing] = useState(false);
   const [isPaperUploading, setPaperUploading] = useState(false);
   const [isImageUploading, setImageUploading] = useState(false);
@@ -100,9 +100,41 @@ export default function MerchantForm({
   const [vPapersError, setVPaperError] = useState<string>();
 
   const form = useForm<FormDataType>({
-    resolver: zodResolver(IVFormSchema),
+    resolver: zodResolver(IProfileFormSchema),
     mode: "onBlur",
-    defaultValues: iVInitialValues,
+    defaultValues: {
+      vehicleNumber: user.business.merchantInformation?.vehicleNumber || "",
+      driversLicense: user.business.merchantInformation?.driversLicense || "",
+      dateOfBirth: user.business.contactInformation?.person.dateOfBirth || "",
+      image: user.business.contactInformation?.person.image || "",
+      vehiclePapers: user.business.document || "",
+      deliveryCategory: Object.entries(user.business.deliveryVehicleInformation)
+        .filter(([categorory, value]) => {
+          const val = value as { available: boolean; count: number };
+          return val.available;
+        })
+        .map(([category, _]) => category),
+      bankAccountDetail: {
+        accountNumber: user.business.paymentDetails.accountNumber || "",
+        bankName: user.business.paymentDetails.bankName || "",
+      },
+      addressDetail: {
+        flatNumber:
+          user.business.contactInformation?.officeAddress.flatNumber || "",
+        landmark:
+          user.business.contactInformation?.officeAddress.landmark || "",
+        buildingNumber:
+          user.business.contactInformation?.officeAddress.buildingNumber || "",
+        buildingName:
+          user.business.contactInformation?.officeAddress.buildingName || "",
+        street: user.business.contactInformation?.officeAddress.street || "",
+        subStreet:
+          user.business.contactInformation?.officeAddress.subStreet || "",
+        country: user.business.contactInformation?.officeAddress.country || "",
+        state: user.business.contactInformation?.officeAddress.state || "",
+        city: user.business.contactInformation?.officeAddress.city || "",
+      },
+    },
   });
   const { toast } = useToast();
   const { dateFrom, dateTo, defaultMonth } = dobRange();

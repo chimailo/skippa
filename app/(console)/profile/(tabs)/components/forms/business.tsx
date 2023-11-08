@@ -101,7 +101,48 @@ export default function MerchantForm({
   const form = useForm<FormDataType>({
     resolver: zodResolver(BVFormSchema),
     mode: "onBlur",
-    defaultValues: bVinitialValues,
+    defaultValues: {
+      billingEmail: user.business.contactInformation?.billingEmail || "",
+      supportEmail: user.business.contactInformation?.supportEmail || "",
+      tin: user.business.merchantInformation?.tin || "",
+      registrationNumber:
+        user.business.merchantInformation?.registrationNumber || "",
+      bankAccountDetail: {
+        accountNumber: user.business.paymentDetails?.accountNumber || "",
+        bankName: user.business.paymentDetails?.bankName || "",
+      },
+      deliveryCategory: Object.entries(user.business.deliveryVehicleInformation)
+        .filter(([categorory, value]) => {
+          const val = value as { available: boolean; count: number };
+          return val.available;
+        })
+        .map(([category, _]) => category),
+      directorDetail: {
+        dateOfBirth:
+          user.business.contactInformation?.director.dateOfBirth || "",
+        firstName: user.business.contactInformation?.director?.firstName || "",
+        lastName: user.business.contactInformation?.director?.lastName || "",
+        image: user.business.contactInformation?.director?.image || "",
+        idNumber: user.business.contactInformation?.director?.idNumber || "",
+        idType: user.business.contactInformation?.director?.idType || "",
+      },
+      addressDetail: {
+        flatNumber:
+          user.business.contactInformation?.officeAddress.flatNumber || "",
+        landmark:
+          user.business.contactInformation?.officeAddress.landmark || "",
+        buildingNumber:
+          user.business.contactInformation?.officeAddress.buildingNumber || "",
+        buildingName:
+          user.business.contactInformation?.officeAddress.buildingName || "",
+        street: user.business.contactInformation?.officeAddress.street || "",
+        subStreet:
+          user.business.contactInformation?.officeAddress.subStreet || "",
+        country: user.business.contactInformation?.officeAddress.country || "",
+        state: user.business.contactInformation?.officeAddress.state || "",
+        city: user.business.contactInformation?.officeAddress.city || "",
+      },
+    },
   });
   const { toast } = useToast();
   const { dateFrom, dateTo, defaultMonth } = dobRange();

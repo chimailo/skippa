@@ -71,9 +71,11 @@ const CATEGORIES = ["motorcycle", "car", "van", "truck"];
 
 function passportLoader({ src, width }: { src: string; width: number }) {
   const params = ["c_scale", "f_auto", `w_${width}`, "q_auto"];
-  return `https://res.cloudinary.com/drgtk7a9s/image/upload/${params.join(
+  const imgUrl = `https://res.cloudinary.com/drgtk7a9s/image/upload/${params.join(
     ","
   )}${src}`;
+  console.log(imgUrl);
+  return imgUrl;
 }
 
 const uploadFiles = async (file: FormData) => {
@@ -423,7 +425,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
               {passport ? (
                 <div className="flex items-center gap-3">
                   <Avatar className="rounded-none relative">
-                    <AvatarImage asChild>
+                    <AvatarImage asChild src={passport.url}>
                       <Image
                         loader={passportLoader}
                         width={40}

@@ -2,29 +2,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import { Session } from "next-auth";
 import { User2 } from "lucide-react";
 
-import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/app/utils";
 
-export default function UserSection() {
-  const router = useRouter();
+type Props = {
+  user: Session["user"];
+};
+
+export default function UserSection({ user }: Props) {
   const pathname = usePathname();
-  const { data, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      router.push("/login?callback=/profile");
-    },
-  });
 
   return (
     <section className="sm:w-64 w-full flex flex-col items-center">
       <div className="space-y-2 py-6 border-b-2 border-zinc-300 w-full flex flex-col items-center">
-        {data?.user.image ? (
+        {user.image ? (
           <Image
-            src={data.user.image}
-            alt={data.user.name + " image"}
+            src={user.image}
+            alt={user.name + " image"}
             width={128}
             height={128}
           />
@@ -33,10 +30,8 @@ export default function UserSection() {
             <User2 className="w-24 h-24 text-zinc-400" />
           </div>
         )}
-        <p className="text-sm font-bold text-center break-words">
-          {data?.user.name}
-        </p>
-        <p className="text-sm text-center truncate">{data?.user.email}</p>
+        <p className="text-sm font-bold text-center break-words">{user.name}</p>
+        <p className="text-sm text-center truncate">{user.email}</p>
       </div>
       <div className="p-5 flex flex-col items-center gap-3 w-full">
         <Link
@@ -50,7 +45,7 @@ export default function UserSection() {
         >
           User Information
         </Link>
-        {data?.user.type !== "admin" && status !== "loading" && (
+        {user.type !== "admin" && (
           <Link
             href="/profile/merchants"
             className={cn(
@@ -63,7 +58,7 @@ export default function UserSection() {
             Business Information
           </Link>
         )}
-        {data?.user.type === "individual" && status !== "loading" && (
+        {user.type === "individual" && (
           <Link
             href="/profile/guarantor"
             className={cn(

@@ -356,7 +356,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
               {passport ? (
                 <div className="flex items-center gap-3">
                   <Avatar className="rounded-none relative">
-                    <AvatarImage asChild>
+                    <AvatarImage asChild src={passport.url}>
                       <Image
                         loader={passportLoader}
                         width={40}

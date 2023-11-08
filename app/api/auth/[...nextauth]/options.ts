@@ -13,11 +13,7 @@ export const authOptions: NextAuthOptions = {
 
         if (!data.success) {
           throw new Error(
-            JSON.stringify({
-              name: data.name,
-              message: data.message,
-              createToken: data.data?.customerAccountCreationToken,
-            })
+            JSON.stringify({ name: data.name, message: data.message })
           );
         }
 
@@ -29,12 +25,25 @@ export const authOptions: NextAuthOptions = {
           mobile: phone,
           email,
           businessType: type,
+          hasCompletedSignUp,
           role,
+          business,
         } = data.data.user;
         const name = firstName + " " + lastName;
         const accessToken = data.data.token;
-        const createToken = data.data.user.customerAccountCreationToken;
-        return { accessToken, id, name, email, type, createToken, role, phone };
+        const createToken = data.data.token.customerAccountCreationToken;
+        return {
+          accessToken,
+          id,
+          name,
+          email,
+          type,
+          createToken,
+          role,
+          phone,
+          hasCompletedSignUp,
+          business,
+        };
       },
     }),
   ],
@@ -49,6 +58,8 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.phone = user.phone;
         token.type = user.type;
+        token.completedSignUp = user.hasCompletedSignUp;
+        token.business = user.business;
       }
       return token;
     },
@@ -59,6 +70,8 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.phone = token.phone;
         session.user.type = token.type;
+        session.user.completedSignUp = token.completedSignUp;
+        session.user.business = token.business;
       }
       return session;
     },
