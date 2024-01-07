@@ -1,13 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Session } from "next-auth";
 import { User2 } from "lucide-react";
-
 import { cn } from "@/lib/utils";
+import { User } from "@/types";
 
 type Props = {
-  user: Session["user"];
+  user: User;
 };
 
 export default function UserSection({ user }: Props) {

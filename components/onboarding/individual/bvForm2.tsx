@@ -1,4 +1,7 @@
+import { useState, useEffect } from "react";
+import useSWR from "swr";
 import { UseFormReturn } from "react-hook-form";
+
 import {
   FormControl,
   FormField,
@@ -6,7 +9,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import $api from "@/lib/axios";
 
 type FormData = UseFormReturn<
   {
@@ -50,6 +61,23 @@ export default function IndividualVerificationForm2({
 }: {
   form: FormData;
 }) {
+  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState([]);
+
+  const { data } = useSWR(`/options/countries`, () =>
+    $api({ url: `/options/countries` })
+  );
+
+  useEffect(() => {
+    if (data) {
+      const countries = data.data;
+      const states = data.data[0].states;
+
+      setCountries(countries);
+      setStates(states);
+    }
+  }, [data]);
+
   return (
     <>
       <h2 className="font-semibold text-sm">Address Details</h2>
@@ -172,13 +200,24 @@ export default function IndividualVerificationForm2({
           name="addressDetail.state"
           render={({ field }) => (
             <FormItem className="w-full">
-              <FormLabel className="">
+              <FormLabel>
                 State
                 <span className="text-red-600 text-xl leading-none">*</span>
               </FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="max-h-80">
+                  {states.map((state: any) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -188,13 +227,24 @@ export default function IndividualVerificationForm2({
           name="addressDetail.country"
           render={({ field }) => (
             <FormItem className="w-full">
-              <FormLabel className="">
+              <FormLabel>
                 Country
                 <span className="text-red-600 text-xl leading-none">*</span>
               </FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="max-h-80">
+                  {countries.map((country: any) => (
+                    <SelectItem key={country.alpha2Code} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -207,7 +257,10 @@ export default function IndividualVerificationForm2({
           name="guarantorDetail.firstName"
           render={({ field }) => (
             <FormItem className="w-full space-y-0">
-              <FormLabel className="">First Name</FormLabel>
+              <FormLabel className="">
+                First Name
+                <span className="text-red-600 text-xl leading-none">*</span>
+              </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
               </FormControl>
@@ -220,7 +273,10 @@ export default function IndividualVerificationForm2({
           name="guarantorDetail.lastName"
           render={({ field }) => (
             <FormItem className="w-full space-y-0">
-              <FormLabel className="">Last Name</FormLabel>
+              <FormLabel className="">
+                Last Name
+                <span className="text-red-600 text-xl leading-none">*</span>
+              </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
               </FormControl>
@@ -235,7 +291,10 @@ export default function IndividualVerificationForm2({
           name="guarantorDetail.email"
           render={({ field }) => (
             <FormItem className="w-full space-y-0">
-              <FormLabel className="">Email</FormLabel>
+              <FormLabel className="">
+                Email
+                <span className="text-red-600 text-xl leading-none">*</span>
+              </FormLabel>
               <FormControl>
                 <Input type="email" {...field} />
               </FormControl>

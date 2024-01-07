@@ -1,5 +1,4 @@
 import { useForm } from "react-hook-form";
-import { Session } from "next-auth";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -12,8 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/components/ui/use-toast";
-import { splitCamelCaseText } from "@/lib/utils";
+import { User } from "@/types";
 
 type FormDataType = z.infer<typeof FormSchema>;
 
@@ -36,11 +34,7 @@ const FormSchema = z.object({
     .length(11, "Phone number must be of length 11 digits"),
 });
 
-export default function UserForm({
-  user,
-}: {
-  user: Session["user"] & { token: string };
-}) {
+export default function UserForm({ user }: { user: User }) {
   const form = useForm<FormDataType>({
     resolver: zodResolver(FormSchema),
     mode: "onBlur",
@@ -51,41 +45,10 @@ export default function UserForm({
       mobile: user.phone,
     },
   });
-  const { toast } = useToast();
-
-  async function handleSubmit(data: FormDataType) {
-    try {
-      const res = await updateUser(data, user.token);
-
-      if (!res?.success) {
-        toast({
-          variant: "destructive",
-          title: splitCamelCaseText(res?.name) || undefined,
-          description:
-            res.message ||
-            "There was a problem with your request, please try again",
-        });
-        return;
-      }
-
-      toast({
-        variant: "primary",
-        title: splitCamelCaseText(res?.name) || undefined,
-        description: res.message || "Your details was successfully updated",
-      });
-      form.reset();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Ooops..., an error has occured",
-      });
-    }
-  }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+      <form className="space-y-8">
         <div className="lg:grid grid-cols-2 lg:gap-8 space-y-8 lg:space-y-0">
           <FormField
             control={form.control}

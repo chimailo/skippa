@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Session } from "next-auth";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import useSWR, { mutate } from "swr";
 import { CalendarIcon, Edit2, Upload } from "lucide-react";
 import { format } from "date-fns";
 
@@ -21,7 +22,7 @@ import { useToast } from "@/components/ui/use-toast";
 import Spinner from "@/components/spinner";
 import { Button } from "@/components/ui/button";
 import { splitCamelCaseText } from "@/lib/utils";
-import { BVFormSchema, bVinitialValues } from "@/components/onboarding/helpers";
+import { BVFormSchema } from "@/components/onboarding/helpers";
 import {
   Popover,
   PopoverContent,
@@ -38,15 +39,10 @@ import { cn, dobRange, validatePassport } from "@/lib/utils";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import $api from "@/lib/axios";
+import { User } from "@/types";
+import useSession from "@/hooks/session";
 
 const CATEGORIES = ["motorcycle", "car", "van", "truck"];
-
-function passportLoader({ src, width }: { src: string; width: number }) {
-  const params = ["c_scale", "f_auto", `w_${width}`, "q_auto"];
-  return `https://res.cloudinary.com/drgtk7a9s/image/upload/${params.join(
-    ","
-  )}${src}`;
-}
 
 type FormDataType = z.infer<typeof BVFormSchema>;
 
@@ -55,6 +51,12 @@ export interface SocMedia {
   handle: string;
 }
 
+type Props = {
+  data: any;
+  user: User;
+  token: string | null;
+};
+
 const uploadFiles = async (file: FormData) => {
   return await fetch(`/api/uploads`, {
     method: "POST",
@@ -62,77 +64,112 @@ const uploadFiles = async (file: FormData) => {
   });
 };
 
-export default function BusinessForm({
-  user,
-}: {
-  user: Session["user"] & { token: string };
-}) {
+export default function BusinessForm({ token, data, user }: Props) {
   const [isEditing, setEditing] = useState(false);
   const [isImageUploading, setImageUploading] = useState(false);
   const [passport, setPassport] = useState<Record<string, string>>();
   const [passportError, setPassportError] = useState<string>();
   const [socialMediaFormCount, setSocialMediaFormCount] = useState(1);
   const [socialMedia, setSocialMedia] = useState<Record<string, SocMedia>>({});
+  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState([]);
 
+  const business = data.business;
+  const { update } = useSession();
   const form = useForm<FormDataType>({
     resolver: zodResolver(BVFormSchema),
-    mode: "onBlur",
+    mode: "onSubmit",
     defaultValues: {
-      billingEmail: user.business.contactInformation?.billingEmail || "",
-      supportEmail: user.business.contactInformation?.supportEmail || "",
-      tin: user.business.merchantInformation?.tin || "",
+      billingEmail: business?.contactInformation?.general?.billingEmail || "",
+      supportEmail: business?.contactInformation?.general?.supportEmail || "",
+      tin: business?.merchantInformation?.tin || "",
       registrationNumber:
-        user.business.merchantInformation?.registrationNumber || "",
+        business?.merchantInformation?.registrationNumber || "",
       bankAccountDetail: {
-        accountNumber: user.business.paymentDetails?.accountNumber || "",
-        bankName: user.business.paymentDetails?.bankName || "",
+        accountNumber: business?.paymentDetails?.accountNumber || "",
+        bankName: business?.paymentDetails?.bankName || "",
       },
-      deliveryCategory: Object.entries(user.business.deliveryVehicleInformation)
-        .filter(([categorory, value]) => {
-          const val = value as { available: boolean; count: number };
-          return val.available;
-        })
-        .map(([category, _]) => category),
+      deliveryCategory: business?.deliveryVehicleInformation
+        ? Object.entries(business?.deliveryVehicleInformation)
+            .filter(([_, value]) => {
+              const val = value as { available: boolean; count: number };
+              return val.available;
+            })
+            .map(([category, _]) =>
+              category === "bike" ? "motorcycle" : category
+            )
+        : [],
       directorDetail: {
-        dateOfBirth:
-          user.business.contactInformation?.director.dateOfBirth || "",
-        firstName: user.business.contactInformation?.director?.firstName || "",
-        lastName: user.business.contactInformation?.director?.lastName || "",
-        image: user.business.contactInformation?.director?.image || "",
-        idNumber: user.business.contactInformation?.director?.idNumber || "",
-        idType: user.business.contactInformation?.director?.idType || "",
+        dateOfBirth: business?.contactInformation?.director.dateOfBirth
+          ? new Date(business?.contactInformation?.director.dateOfBirth)
+          : undefined,
+        firstName: business?.contactInformation?.director?.firstName || "",
+        lastName: business?.contactInformation?.director?.lastName || "",
+        image: business?.contactInformation?.director?.image || "",
+        idNumber: business?.contactInformation?.director?.idNumber || "",
+        idType: business?.contactInformation?.director?.idType || "",
       },
       addressDetail: {
         flatNumber:
-          user.business.contactInformation?.officeAddress.flatNumber || "",
-        landmark:
-          user.business.contactInformation?.officeAddress.landmark || "",
+          business?.contactInformation?.officeAddress.flatNumber || "",
+        landmark: business?.contactInformation?.officeAddress.landmark || "",
         buildingNumber:
-          user.business.contactInformation?.officeAddress.buildingNumber || "",
+          business?.contactInformation?.officeAddress.buildingNumber || "",
         buildingName:
-          user.business.contactInformation?.officeAddress.buildingName || "",
-        street: user.business.contactInformation?.officeAddress.street || "",
-        subStreet:
-          user.business.contactInformation?.officeAddress.subStreet || "",
-        country: user.business.contactInformation?.officeAddress.country || "",
-        state: user.business.contactInformation?.officeAddress.state || "",
-        city: user.business.contactInformation?.officeAddress.city || "",
+          business?.contactInformation?.officeAddress.buildingName || "",
+        street: business?.contactInformation?.officeAddress.street || "",
+        subStreet: business?.contactInformation?.officeAddress.subStreet || "",
+        country: business?.contactInformation?.officeAddress.country || "",
+        state: business?.contactInformation?.officeAddress.state || "",
+        city: business?.contactInformation?.officeAddress.city || "",
       },
     },
   });
   const { toast } = useToast();
+  const { data: res } = useSWR(`/options/countries`, () =>
+    $api({ url: `/options/countries` })
+  );
   const { dateFrom, dateTo, defaultMonth } = dobRange();
 
   useEffect(() => {
-    const passport: Record<string, string> = JSON.parse(
-      localStorage.getItem("passport") as string
+    const image = business?.contactInformation?.director.image || "";
+
+    const soc = {
+      twitter: business?.contactInformation?.general.twitter || "",
+      facebook: business?.contactInformation?.general.facebook || "",
+      instagram: business?.contactInformation?.general.instagram || "",
+    };
+
+    let index = 0;
+    const sMedia = Object.assign(
+      {},
+      ...Object.entries(soc).map(([name, handle]) => {
+        let entries;
+        if (handle) {
+          entries = { [index]: { name, handle } };
+          index += 1;
+          return entries;
+        } else return;
+      })
     );
 
-    if (passport) {
-      setPassport(passport);
-      form.setValue("directorDetail.image", passport.url);
-    }
+    const sMediaCount = Object.keys(sMedia).length;
+    console.log(sMedia);
+
+    setPassport({ url: image });
+    setSocialMedia(sMedia);
+    setSocialMediaFormCount(sMediaCount || 1);
   }, []);
+
+  useEffect(() => {
+    if (res) {
+      const countries = res.data;
+      const states = res.data[0].states;
+
+      setCountries(countries);
+      setStates(states);
+    }
+  }, [res]);
 
   const convertBase64 = (file: File) => {
     return new Promise<string>((resolve, reject) => {
@@ -174,12 +211,13 @@ export default function BusinessForm({
       const res = await uploadFiles(imgForm);
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!data.success) {
         toast({
+          duration: 1000 * 5,
           variant: "destructive",
-          duration: 1000 * 60 * 8,
           title: "Error",
           description:
+            data.message ||
             "An error occured uploading your passport photo, please try again",
         });
         return;
@@ -197,6 +235,7 @@ export default function BusinessForm({
       localStorage.setItem("passport", JSON.stringify(image));
     } catch (error) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -206,17 +245,25 @@ export default function BusinessForm({
     }
   };
 
+  const handleAddSocialMedia = () => {
+    if (socialMediaFormCount === 3) return;
+    setSocialMediaFormCount(socialMediaFormCount + 1);
+  };
+
+  const handleRemoveSocialMedia = () => {
+    if (socialMediaFormCount === 1) return;
+    setSocialMediaFormCount(socialMediaFormCount - 1);
+  };
+
   async function handleSubmit(formData: FormDataType) {
     try {
-      const data = {
-        ...formData,
-        socialMedia: Object.assign(
-          {},
-          ...Object.values(socialMedia).map(({ name, handle }) => ({
-            [name]: handle,
-          }))
-        ),
-      };
+      setEditing(false);
+      const socMedia = Object.assign(
+        {},
+        ...Object.values(socialMedia).map(({ name, handle }) => ({
+          [name]: handle,
+        }))
+      );
 
       const { deliveryCategory, ...rest } = formData;
       const category = {
@@ -228,28 +275,30 @@ export default function BusinessForm({
 
       const res = await $api({
         method: "post",
-        headers: { Authorization: `Bearer ${user.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         url: "/merchants/business/account/verification",
-        data: { ...rest, deliveryCategory: category },
+        data: { ...rest, deliveryCategory: category, socialMedia: socMedia },
       });
+      const status = res.data.status;
+      const verificationCount = res.data.verificationChecks;
+
+      mutate({ ...data, business: res.data.business });
+      update({ status, verificationCount });
 
       toast({
         variant: "primary",
-        title: splitCamelCaseText(res.data.name) || undefined,
         description:
-          res.data.message || "Your business details was successfully updated",
+          res.message || "Your business details was successfully updated",
       });
-
-      form.reset();
-      localStorage.removeItem("passport");
     } catch (error: any) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:
-          error.data[0]?.message ||
           error.data?.message ||
           error.message ||
+          error.data[0]?.message ||
           "There was a problem with your request, please try again",
       });
     }
@@ -350,7 +399,7 @@ export default function BusinessForm({
                     <SelectItem value="passport">
                       International Passport
                     </SelectItem>
-                    <SelectItem value="license">
+                    <SelectItem value="drivers_license">
                       Driver&apos;s License
                     </SelectItem>
                   </SelectContent>
@@ -398,7 +447,7 @@ export default function BusinessForm({
                         disabled={!isEditing}
                       >
                         {field.value && format(new Date(field.value), "PPP")}
-                        <CalendarIcon className="ml-auto h-4 w-4" />
+                        <CalendarIcon className="ml-auto h-4 w-4 text-primary" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
@@ -439,15 +488,14 @@ export default function BusinessForm({
                     />
                   )}
                 </div>
-                {passport ? (
+                {passport?.url ? (
                   <div className="flex items-center gap-3">
                     <Avatar className="rounded-none relative">
-                      <AvatarImage asChild>
+                      <AvatarImage asChild src={passport?.url}>
                         <Image
-                          loader={passportLoader}
                           width={40}
                           height={40}
-                          src={passport.src}
+                          src={form.getValues("directorDetail.image")}
                           alt="Director's passport"
                         />
                       </AvatarImage>
@@ -457,8 +505,8 @@ export default function BusinessForm({
                       </span>
                     </Avatar>
                     <span className="text-xs text-gray-600">
-                      <p className="mb-1 font-medium">{passport.name}</p>
-                      <p className="font-medium">{passport.size}</p>
+                      <p className="mb-1 font-medium">{passport?.name}</p>
+                      <p className="font-medium">{passport?.size}</p>
                     </span>
                   </div>
                 ) : (
@@ -521,7 +569,7 @@ export default function BusinessForm({
               Categories
               <span className="text-red-600 text-xl leading-none">*</span>
             </FormLabel>
-            <FormItem className="grid grid-cols-2 space-y-0 lg:grid-cols-4 gap-3">
+            <FormItem className="flex items-center gap-6 space-y-0">
               {CATEGORIES.map((category) => (
                 <FormField
                   control={form.control}
@@ -563,17 +611,6 @@ export default function BusinessForm({
                   Social Media Handle
                 </h2>
               </div>
-              <Button
-                variant="outline"
-                className="w-6 h-6 flex items-center justify-center text-lg leading-none"
-                type="button"
-                disabled={!isEditing}
-                onClick={() =>
-                  setSocialMediaFormCount(socialMediaFormCount + 1)
-                }
-              >
-                +
-              </Button>
             </div>
             {Array.from({ length: socialMediaFormCount }, (_, k) => (
               <div key={k} className="grid grid-cols-3 gap-4">
@@ -593,7 +630,7 @@ export default function BusinessForm({
                               },
                             })
                           }
-                          defaultValue=""
+                          value={socialMedia[k]?.name}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -619,6 +656,7 @@ export default function BusinessForm({
                         <Input
                           type="text"
                           disabled={!isEditing}
+                          value={socialMedia[k]?.handle}
                           onChange={(e) =>
                             setSocialMedia({
                               ...socialMedia,
@@ -636,6 +674,26 @@ export default function BusinessForm({
                 />
               </div>
             ))}
+            <div className="flex items-center gap-5 justify-end">
+              <Button
+                variant="outline"
+                className="w-6 h-6 flex items-center justify-center text-lg leading-none"
+                type="button"
+                disabled={!isEditing}
+                onClick={handleAddSocialMedia}
+              >
+                +
+              </Button>
+              <Button
+                variant="outline"
+                className="w-6 h-6 flex items-center justify-center text-lg leading-none"
+                type="button"
+                disabled={!isEditing}
+                onClick={handleRemoveSocialMedia}
+              >
+                -
+              </Button>
+            </div>
           </div>
         </div>
         <div className="lg:grid grid-cols-2 lg:gap-8 space-y-8 lg:space-y-0">
@@ -644,7 +702,9 @@ export default function BusinessForm({
             name="bankAccountDetail.bankName"
             render={({ field }) => (
               <FormItem className="w-full space-y-0">
-                <FormLabel className="">Bank Name</FormLabel>
+                <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
+                  Bank Name
+                </FormLabel>
                 <FormControl>
                   <Input type="text" {...field} disabled={!isEditing} />
                 </FormControl>
@@ -657,7 +717,9 @@ export default function BusinessForm({
             name="bankAccountDetail.accountNumber"
             render={({ field }) => (
               <FormItem className="w-full space-y-0">
-                <FormLabel className="">Bank Accont No.</FormLabel>
+                <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
+                  Bank Account No.
+                </FormLabel>
                 <FormControl>
                   <Input type="text" {...field} disabled={!isEditing} />
                 </FormControl>
@@ -786,13 +848,25 @@ export default function BusinessForm({
             name="addressDetail.state"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="">
-                  State
-                  <span className="text-red-600 text-xl leading-none">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
-                </FormControl>
+                <FormLabel>State</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={!isEditing}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-80">
+                    {states.map((state: any) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -802,45 +876,84 @@ export default function BusinessForm({
             name="addressDetail.country"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="">
-                  Country
-                  <span className="text-red-600 text-xl leading-none">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
-                </FormControl>
+                <FormLabel>Country</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={!isEditing}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-80">
+                    {countries.map((country: any) => (
+                      <SelectItem
+                        key={country.alpha2Code}
+                        value={country.name}
+                      >
+                        {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        <div className="w-full flex justify-end">
-          {isEditing ? (
-            <Button
-              disabled={form.formState.isSubmitting || !form.formState.isValid}
-              size="lg"
-              className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
-            >
-              Submit
-              {form.formState.isSubmitting && (
-                <Spinner
-                  twColor="text-white before:bg-white"
-                  twSize="w-4 h-4"
-                  className="ml-3"
-                />
-              )}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="lg"
-              className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </Button>
-          )}
-        </div>
+        {["pending-activation", "rejected", "activated"].includes(
+          user.status
+        ) && (
+          <div className="w-full flex justify-end gap-4">
+            {isEditing ? (
+              <>
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="destructive"
+                  className="font-bold text-lg xl:text-2xl transition-opacity"
+                  onClick={() => {
+                    form.reset();
+                    setEditing(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={form.formState.isSubmitting}
+                  size="lg"
+                  className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
+                >
+                  Submit
+                  {form.formState.isSubmitting && (
+                    <Spinner
+                      twColor="text-white before:bg-white"
+                      twSize="w-4 h-4"
+                      className="ml-3"
+                    />
+                  )}
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="button"
+                size="lg"
+                className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
+                disabled={["processing-activation", "activated"].includes(
+                  user.status
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setEditing(true);
+                }}
+              >
+                Edit
+              </Button>
+            )}
+          </div>
+        )}
       </form>
     </Form>
   );

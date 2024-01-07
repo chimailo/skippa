@@ -1,62 +1,64 @@
-import { useContext } from "react";
-import { useSession } from "next-auth/react";
-import { Raleway } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/header";
 import Sidebar from "@/components/sidebar";
+import ChildSidebar from "@/components/child-sidebar";
 import { cn } from "@/lib/utils";
-import Spinner from "@/components/spinner";
-import {
-  SidebarWidthContextProps,
-  SidebarWidthContext,
-} from "@/context/sidebarWidthProvider";
-
-const raleway = Raleway({ subsets: ["latin"] });
+import { useSidebarWidth } from "@/context/sidebarWidthProvider";
+import { User } from "@/types";
 
 type Props = {
   auth?: boolean;
+  user?: User | null;
   children: React.ReactNode;
   sidebar?: {
     active: string;
     activeChild?: string;
   };
+  title?: string;
 };
 
-export default function Layout({ auth, children, sidebar }: Props) {
-  const { collapsed } =
-    useContext<SidebarWidthContextProps>(SidebarWidthContext);
-  const { data: session, status } = useSession();
+export default function Layout({
+  children,
+  sidebar,
+  title,
+  auth,
+  user,
+}: Props) {
+  const { collapsed } = useSidebarWidth();
+  const hasChild = !!sidebar?.activeChild;
 
   return (
-    <div className={cn("relative", raleway.className)}>
-      {status === "loading" ? (
-        <div className="w-full py-12 md:py-24 flex items-center justify-center">
-          <Spinner twColor="text-primary before:bg-primary" twSize="w-8 h-8" />
-        </div>
-      ) : auth ? (
+    <>
+      {user ? (
         <>
-          <Sidebar user={session?.user} sidebar={sidebar} />
-          <div className="w-full">
-            {auth ? <Header auth /> : <Header />}
-            <div className="md:p-5 bg-zinc-200">
-              <main
-                className={cn(
-                  "transition-all duration-300 overflow-y-auto z-10 rounded-lg bg-white min-h-[calc(100vh_-_6rem)]",
-                  collapsed ? "ml-20" : "lg:ml-64 ml-20"
-                )}
-              >
-                {children}
-              </main>
-            </div>
+          <Header auth />
+          <Sidebar user={user} active={sidebar?.active} hasChild={hasChild} />
+          {hasChild && (
+            <ChildSidebar user={user} active={sidebar?.activeChild} />
+          )}
+          <div
+            className={cn(
+              "md:p-5 duration-300 transition-all bg-zinc-200",
+              !collapsed ? "ml-28 md:ml-64" : hasChild ? "ml-28" : "ml-14"
+            )}
+          >
+            {title && <h1 className="font-bold text-xl mb-4">{title}</h1>}
+            <main
+              className={cn(
+                "overflow-y-auto z-10 rounded-lg bg-white min-h-[calc(100vh_-_6rem)]"
+              )}
+            >
+              {children}
+            </main>
           </div>
         </>
       ) : (
         <>
-          <Header />
+          {auth ? <Header auth /> : <Header />}
           {children}
         </>
       )}
       <Toaster />
-    </div>
+    </>
   );
 }

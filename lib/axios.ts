@@ -9,24 +9,16 @@ const instance = axios.create({
   },
 });
 
-export default function $api(request: AxiosRequestConfig) {
+export default function $api(
+  request: AxiosRequestConfig & { token?: string | null }
+): any {
+  if (request.token) {
+    instance.defaults.headers.common[
+      "Authorization"
+    ] = `Bearer ${request.token}`;
+  }
   return instance(request);
 }
-
-instance.interceptors.request.use(
-  // function (config) {
-  //   const token = localStorage.getItem("next-auth.token");
-
-  //   if (token) {
-  //     config.headers.Authorization = `Bearer ${token}`;
-  //   }
-  //   return config;
-  // },
-  function (error) {
-    console.log(error);
-    return Promise.reject(error);
-  }
-);
 
 instance.interceptors.response.use(
   function (response) {

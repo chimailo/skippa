@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -46,6 +48,10 @@ const FormSchema = z.object({
     .string()
     .min(1, "Phone number is required")
     .length(11, "Phone number must be of length 11 digits"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email({ message: "Invalid email" }),
   addressDetail: z.object({
     flatNumber: z.string().optional(),
     buildingName: z.string().optional(),
@@ -64,6 +70,9 @@ const FormSchema = z.object({
 });
 
 export default function Guarantor() {
+  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState([]);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const form = useForm<FormData>({
@@ -74,7 +83,8 @@ export default function Guarantor() {
       idNumber: "",
       idType: "",
       mobile: "",
-      employer: "Nigeria",
+      email: "",
+      employer: "",
       employmentStatus: "",
       addressDetail: {
         flatNumber: "",
@@ -83,7 +93,7 @@ export default function Guarantor() {
         buildingName: "",
         street: "",
         subStreet: "",
-        country: "",
+        country: "Nigeria",
         state: "",
         city: "",
       },
@@ -92,12 +102,27 @@ export default function Guarantor() {
   });
   const { toast } = useToast();
 
+  const { data } = useSWR(`/options/countries`, () =>
+    $api({ url: `/options/countries` })
+  );
+
+  useEffect(() => {
+    if (data) {
+      const countries = data.data;
+      const states = data.data[0].states;
+
+      setCountries(countries);
+      setStates(states);
+    }
+  }, [data]);
+
   async function handleSubmit(formData: FormData) {
-    const id = searchParams.get("id");
+    const id = searchParams.get("merchantId");
     const token = searchParams.get("token");
 
     if (!(id || token)) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: "Invalid Link",
         description:
@@ -117,12 +142,13 @@ export default function Guarantor() {
       router.push("/onboarding/guarantor/welcome");
     } catch (error: any) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:
-          error.data[0].message ||
           error.data?.message ||
           error.message ||
+          error.data[0]?.message ||
           "There was a problem with your request, please try again",
       });
     }
@@ -134,7 +160,7 @@ export default function Guarantor() {
         <div className="shadow-3xl rounded-lg py-6 px-5 sm:px-8 md:py-8 xl:px-12 my-6 md:my-9 min-h-[calc(100vh_-_8rem)]">
           <div className=" mb-6 md:mb-9">
             <h1 className="text-3xl text-primary font-bold">Guarantor</h1>
-            <h1 className="text-3xl text-primary font-bold">Verification</h1>
+            <h1 className="text-3xl text-primary font-bold">Form</h1>
           </div>
           <Form {...form}>
             <form
@@ -251,8 +277,10 @@ export default function Guarantor() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="employed">Employed</SelectItem>
-                          <SelectItem value="unemployed">Unemployed</SelectItem>
+                          <SelectItem value="employee">Employee</SelectItem>
+                          <SelectItem value="self-employed">
+                            Self-Employed
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -261,7 +289,7 @@ export default function Guarantor() {
                 />
                 <FormField
                   control={form.control}
-                  name="idNumber"
+                  name="employer"
                   render={({ field }) => (
                     <FormItem className="w-full">
                       <FormLabel className="">
@@ -286,6 +314,21 @@ export default function Guarantor() {
                       </FormLabel>
                       <FormControl>
                         <Input type="text" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="after:text-red-600 after:ml-1 after:content-['*'] after:text-xl after:leading-none flex-1">
+                        Email
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} required />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -420,15 +463,29 @@ export default function Guarantor() {
                   name="addressDetail.state"
                   render={({ field }) => (
                     <FormItem className="w-full">
-                      <FormLabel className="">
+                      <FormLabel>
                         State
                         <span className="text-red-600 text-xl leading-none">
                           *
                         </span>
                       </FormLabel>
-                      <FormControl>
-                        <Input type="text" {...field} />
-                      </FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-80">
+                          {states.map((state: any) => (
+                            <SelectItem key={state} value={state}>
+                              {state}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -438,15 +495,32 @@ export default function Guarantor() {
                   name="addressDetail.country"
                   render={({ field }) => (
                     <FormItem className="w-full">
-                      <FormLabel className="">
+                      <FormLabel>
                         Country
                         <span className="text-red-600 text-xl leading-none">
                           *
                         </span>
                       </FormLabel>
-                      <FormControl>
-                        <Input type="text" {...field} />
-                      </FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-80">
+                          {countries.map((country: any) => (
+                            <SelectItem
+                              key={country.alpha2Code}
+                              value={country.name}
+                            >
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

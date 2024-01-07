@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --grey: 240 4.8% 95.9%;
+  --main: 174, 44%, 51%;
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--main)) transparent;
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--main));
+  border-radius: 5px;
+  border: 2px solid hsl(var(--main));
+}
+
 @layer base {
   @layer base {
     :root {

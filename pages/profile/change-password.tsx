@@ -1,6 +1,7 @@
+import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import { getIronSession } from "iron-session";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +24,9 @@ import Link from "next/link";
 import Container from "@/components/container";
 import $api from "@/lib/axios";
 import Layout from "@/components/layout";
+import useSession from "@/hooks/session";
+import { sessionOptions } from "@/lib/session";
+import { SessionData } from "@/types";
 
 type FormType = z.infer<typeof FormSchema>;
 
@@ -65,7 +69,9 @@ const FormSchema = z
     path: ["confirmPassword"],
   });
 
-export default function ForgotPasswordForm() {
+export default function ForgotPasswordForm({
+  session,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -80,32 +86,19 @@ export default function ForgotPasswordForm() {
   });
   const { toast } = useToast();
   const router = useRouter();
-  const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      router.push("/login");
-    },
-  });
-
-  if (status === "loading") {
-    <Layout auth sidebar={{ active: "profile" }}>
-      <div className="w-full py-12 flex items-center justify-center">
-        <Spinner twColor="text-primary before:bg-primary" twSize="w-8 h-8" />
-      </div>
-    </Layout>;
-  }
 
   async function onSubmit(data: FormType) {
     try {
       const res = await $api({
-        method: "post",
+        method: "put",
         url: `/auth/user/me/password/change`,
-        headers: { Authorization: `Bearer ${session?.token}` },
+        headers: { Authorization: `Bearer ${session.token}` },
         data,
       });
 
       form.reset();
       toast({
+        duration: 1000 * 5,
         variant: "primary",
         title: splitCamelCaseText(res.data?.name) || undefined,
         description:
@@ -114,6 +107,7 @@ export default function ForgotPasswordForm() {
       router.push("/profile");
     } catch (error: any) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:
@@ -126,8 +120,12 @@ export default function ForgotPasswordForm() {
   }
 
   return (
-    <Layout auth sidebar={{ active: "profile", activeChild: "profile" }}>
-      <Container>
+    <Layout
+      auth
+      user={session.user}
+      sidebar={{ active: "profile", activeChild: "profile" }}
+    >
+      <Container className="py-8">
         <div className="flex items-center gap-3 mb-12">
           <Link
             href="/profile"
@@ -268,3 +266,22 @@ export default function ForgotPasswordForm() {
     </Layout>
   );
 }
+
+export const getServerSideProps = (async (context) => {
+  const session = await getIronSession<SessionData>(
+    context.req,
+    context.res,
+    sessionOptions
+  );
+
+  if (!session.isLoggedIn) {
+    return {
+      redirect: {
+        destination: `/login`,
+        permanent: false,
+      },
+    };
+  }
+
+  return { props: { session } };
+}) satisfies GetServerSideProps<{ session: SessionData }>;

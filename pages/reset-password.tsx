@@ -82,30 +82,32 @@ export default function ForgotPasswordForm() {
 
   async function onSubmit(data: FormType) {
     try {
-      await $api({
+      const res = await $api({
         url: `/auth/token/${token}/password/reset`,
-        method: "post",
+        method: "put",
         data,
       });
 
-      form.reset();
-      router.push("/login");
-    } catch (error: any) {
-      if (error.res?.error) {
-        toast({
-          variant: "destructive",
-          title: splitCamelCaseText(error.res.name) || undefined,
-          description:
-            error.res.message ||
-            "There was a problem with your request, please try again",
-        });
-        return;
-      }
-
       toast({
+        duration: 1000 * 5,
+        variant: "primary",
+        title: splitCamelCaseText(res.name) || undefined,
+        description: res.message || "Your password reset was successful",
+      });
+      form.reset();
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 9000);
+    } catch (error: any) {
+      toast({
+        duration: 1000 * 5,
         variant: "destructive",
-        title: "Error",
-        description: "Ooops..., an error has occured",
+        title: splitCamelCaseText(error.data?.name) || undefined,
+        description:
+          error.data?.message ||
+          error.message ||
+          "Failed to reset your password, please try again",
       });
     }
   }

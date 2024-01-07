@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import { getIronSession } from "iron-session";
 import { useForm } from "react-hook-form";
-import { useSession } from "next-auth/react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -24,29 +25,27 @@ import {
 } from "@/components/onboarding/helpers";
 import { splitCamelCaseText } from "@/lib/utils";
 import $api from "@/lib/axios";
-import { useMerchant } from "@/hooks/merchant";
 import Layout from "@/components/layout";
+import useSession from "@/hooks/session";
+import { SessionData } from "@/types";
+import { sessionOptions } from "@/lib/session";
 
 type BVFormData = z.infer<typeof BVFormSchema>;
 type IVFormData = z.infer<typeof IVFormSchema>;
 
 const NUM_OF_FORM_PAGES = 2;
 
-export default function Onboarding() {
+export default function Onboarding({
+  session,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [page, setPage] = useState(1);
   const [socialMedia, setSocialMedia] = useState<Record<string, SocMedia>>({});
 
   const router = useRouter();
-  const session = useSession();
-  const merchant = useMerchant({ user: session.data?.user || null });
+  const { update } = useSession();
 
-  if (session.status === "unauthenticated") {
-    router.push("/login");
-  }
-
-  const isLoading = session.status === "loading";
-  const isBusiness = session.data?.user.type === "business";
-  const isIndividual = session.data?.user.type === "individual";
+  const isBusiness = session.user?.type === "business";
+  const isIndividual = session.user?.type === "individual";
 
   const bvForm = useForm<BVFormData>({
     resolver: zodResolver(BVFormSchema),
@@ -98,10 +97,13 @@ export default function Onboarding() {
 
       form.reset();
       localStorage.removeItem("passport");
-      merchant.update({ ...session.data?.user!, business: res.data.business });
+
+      const { status, verificationChecks } = res.data;
+      update({ status, verificationCount: verificationChecks });
       router.push("/onboarding/welcome");
     } catch (error: any) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name || "") || undefined,
         description:
@@ -131,10 +133,13 @@ export default function Onboarding() {
 
       localStorage.removeItem("passport");
       localStorage.removeItem("vPapers");
-      merchant.update({ ...session.data?.user!, business: res.data.business });
+
+      const { status, verificationChecks } = res.data;
+      update({ status, verificationCount: verificationChecks });
       router.push("/onboarding/welcome");
     } catch (error: any) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:
@@ -146,21 +151,13 @@ export default function Onboarding() {
   }
 
   return (
-    <Layout>
+    <Layout auth>
       <Container compact>
         <div className="shadow-3xl rounded-lg py-6 px-5 sm:px-8 md:py-8 xl:px-12 my-6 md:my-9 min-h-[calc(100vh_-_8rem)]">
           <div className=" mb-6 md:mb-9">
             <h1 className="text-3xl text-primary font-bold">Business</h1>
             <h1 className="text-3xl text-primary font-bold">Verification</h1>
           </div>
-          {isLoading && (
-            <div className="w-full py-12 md:py-24 flex items-center justify-center">
-              <Spinner
-                twColor="text-primary before:bg-primary"
-                twSize="w-8 h-8"
-              />
-            </div>
-          )}
           {isBusiness && (
             <Form {...bvForm}>
               <form
@@ -168,9 +165,11 @@ export default function Onboarding() {
                 className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
               >
                 {page === 1 ? (
+                  // @ts-expect-error
                   <BusinessVerificationForm1 form={bvForm} />
                 ) : (
                   <BusinessVerificationForm2
+                    // @ts-expect-error
                     form={bvForm}
                     setSocMedia={setSocialMedia}
                     socMedia={socialMedia}
@@ -231,8 +230,10 @@ export default function Onboarding() {
                 className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
               >
                 {page === 1 ? (
+                  // @ts-expect-error
                   <IndividualVerificationForm1 form={ivForm} />
                 ) : (
+                  // @ts-expect-error
                   <IndividualVerificationForm2 form={ivForm} />
                 )}
                 <div className="my-4 flex justify-between items-center flex-row-reverse">
@@ -288,3 +289,23 @@ export default function Onboarding() {
     </Layout>
   );
 }
+
+export const getServerSideProps = (async (context) => {
+  const session = await getIronSession<SessionData>(
+    context.req,
+    context.res,
+    sessionOptions
+  );
+
+  if (!session.isLoggedIn) {
+    return {
+      redirect: {
+        destination: `/login`,
+        permanent: false,
+      },
+    };
+  }
+  return { props: { session } };
+}) satisfies GetServerSideProps<{
+  session: SessionData;
+}>;

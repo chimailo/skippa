@@ -1,8 +1,8 @@
 import Svg from "@/components/svg/base";
 
-export default function UserIcon() {
+export default function UserIcon(props: React.ComponentProps<"svg">) {
   return (
-    <Svg viewBox="0 0 16 16" fill="none" className="w-6 h-6 fill-current">
+    <Svg viewBox="0 0 16 16" fill="none" {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"

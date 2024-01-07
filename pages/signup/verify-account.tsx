@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
 import OTPInput from "react-otp-input";
 
 import { Button } from "@/components/ui/button";
@@ -20,11 +19,21 @@ import Container from "@/components/container";
 import { splitCamelCaseText } from "@/lib/utils";
 import $api from "@/lib/axios";
 import Header from "@/components/header";
+import useSession from "@/hooks/session";
 
 const TIMEOUT = 60 * 2;
 const LEN_INPUT = 6;
+// const initialOTPValues = {
+//   char1: "",
+//   char2: "",
+//   char3: "",
+//   char4: "",
+//   char5: "",
+//   char6: "",
+// };
 
 export default function VerifyAccountForm() {
+  // const [otp, setOtp] = useState<{ [key: string]: string }>(initialOTPValues);
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(TIMEOUT);
   const [isResending, setResending] = useState(false);
@@ -33,7 +42,7 @@ export default function VerifyAccountForm() {
   const router = useRouter();
   const search = useSearchParams();
   const { toast } = useToast();
-  const { data: session } = useSession();
+  const { session, signIn } = useSession();
 
   const email = search.get("email");
   const token = search.get("token");
@@ -51,6 +60,13 @@ export default function VerifyAccountForm() {
     const sec = Math.floor(counter % 60);
     return `${min}:${sec < 10 ? "0" + sec : sec} ${min > 0 ? "mins" : "secs"}`;
   };
+
+  // const handleOTPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const { name, value } = e.target;
+  //   setOtp({ [name]: value });
+  // };
+
+  // const canSubmit = () => Object.values(otp).length === 6;
 
   const handleOTPChange = (otp: string) => setOtp(otp);
 
@@ -72,17 +88,20 @@ export default function VerifyAccountForm() {
       });
 
       toast({
+        duration: 1000 * 5,
         variant: "primary",
         title: "Success",
         description: res.data.message || "Successfully sent OTP to your email",
       });
 
       setOtp("");
+      // setOtp(initialOTPValues);
       setTimer(TIMEOUT);
       const token = res.data.accountCreationToken;
       router.push(`/signup/verify-account?token=${token}&email=${email}`);
     } catch (error: any) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name || "") || undefined,
         description:
@@ -117,6 +136,7 @@ export default function VerifyAccountForm() {
         url: `merchants/account/${token}/complete`,
         method: "post",
         data: { otp },
+        // data: { otp: Object.values(otp).join() },
       });
 
       // Read cookie to get the user login credentials
@@ -124,6 +144,7 @@ export default function VerifyAccountForm() {
 
       if (!password) {
         toast({
+          duration: 1000 * 5,
           variant: "destructive",
           title: "Session Error",
           description: "Your previous session has expired, you need to login",
@@ -132,36 +153,22 @@ export default function VerifyAccountForm() {
         return;
       }
 
-      const login = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (login?.error) {
-        const error = JSON.parse(login.error);
-        toast({
-          variant: "destructive",
-          title: splitCamelCaseText(error.name) || undefined,
-          description:
-            error.message ||
-            "There was a problem signing you in, please try again",
-        });
-        return;
-      }
+      await signIn({ email: email!, password });
 
       // Delete the cookie when signin is successful
       saveToCookie("password", password);
       setOtp("");
+      // setOtp(initialOTPValues);
       router.push("/onboarding");
     } catch (error: any) {
-      console.log(error);
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
-        title: splitCamelCaseText(error.data?.name || "") || undefined,
+        title: splitCamelCaseText(error?.name || "Error"),
         description:
           error.data?.message ||
-          "An error occured during otp verification, please try again",
+          error.message ||
+          "There was a problem with your request, please try again",
       });
     } finally {
       setSubmitting(false);
@@ -192,7 +199,7 @@ export default function VerifyAccountForm() {
             <CardTitle className="font-bold lg:text-3xl">
               Verify Your Account
             </CardTitle>
-            <CardDescription className="sm:text-xl">
+            <CardDescription className="sm:text-xl text-inherit">
               A 6-digit code has been sent to your email address at{" "}
               {sliceEmail(search.get("email"))}
             </CardDescription>
@@ -203,7 +210,7 @@ export default function VerifyAccountForm() {
                 Enter the code within{" "}
                 <strong className="text-primary">{formatTimeout(timer)}</strong>
               </p>
-              <div className="">
+              <div className="flex items-center gap-2 sm:gap-4 lg:gap-5">
                 <OTPInput
                   containerStyle="gap-2 sm:gap-4 lg:gap-5"
                   numInputs={6}
@@ -220,6 +227,73 @@ export default function VerifyAccountForm() {
                   )}
                   shouldAutoFocus
                 />
+                {/* <Input
+                  type="number"
+                  autoFocus
+                  inputMode="numeric"
+                  className="w-9 appearance-none h-9 sm:w-12 sm:h-12 sm:text-2xl"
+                  disabled={timer === 0}
+                  value={otp.char1}
+                  autoComplete="off"
+                  maxLength={1}
+                  aria-label="Please enter OTP character 1"
+                  onChange={(e) => handleOTPChange(e)}
+                />
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  className="w-9 appearance-none h-9 sm:w-12 sm:h-12 sm:text-2xl"
+                  disabled={timer === 0}
+                  value={otp.char2}
+                  autoComplete="off"
+                  maxLength={1}
+                  aria-label="Please enter OTP character 2"
+                  onChange={(e) => handleOTPChange(e)}
+                />
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  className="w-9 appearance-none h-9 sm:w-12 sm:h-12 sm:text-2xl"
+                  disabled={timer === 0}
+                  value={otp.char3}
+                  autoComplete="off"
+                  maxLength={1}
+                  aria-label="Please enter OTP character 3"
+                  onChange={(e) => handleOTPChange(e)}
+                />
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  className="w-9 appearance-none h-9 sm:w-12 sm:h-12 sm:text-2xl"
+                  disabled={timer === 0}
+                  value={otp.char4}
+                  autoComplete="off"
+                  maxLength={1}
+                  aria-label="Please enter OTP character 4"
+                  onChange={(e) => handleOTPChange(e)}
+                />
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  className="w-9 appearance-none h-9 sm:w-12 sm:h-12 sm:text-2xl"
+                  disabled={timer === 0}
+                  value={otp.char5}
+                  autoComplete="off"
+                  maxLength={1}
+                  aria-label="Please enter OTP character 5"
+                  onChange={(e) => handleOTPChange(e)}
+                />
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  className="w-9 appearance-none h-9 sm:w-12 sm:h-12 sm:text-2xl"
+                  disabled={timer === 0}
+                  value={otp.char6}
+                  autoComplete="off"
+                  maxLength={1}
+                  aria-label="Please enter OTP character 6"
+                  onChange={(e) => handleOTPChange(e)}
+                /> */}
               </div>
               <p className="sm:text-xl">
                 Didn’t receive a code?

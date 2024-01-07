@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import useSWR from "swr";
 import { Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import Footer from "@/components/footer";
 import Layout from "@/components/layout";
@@ -35,25 +43,39 @@ const BFormSchema = z
   .object({
     firstName: z
       .string()
-      .min(1, { message: "First Name is required" })
       .min(2, "First Name must be at least 2 characters long")
-      .max(64, "First Name cannot be more than 64 characters long"),
+      .max(64, "First Name cannot be more than 64 characters long")
+      .refine((val) => val.trim().length, {
+        message: "First name is required",
+      }),
     lastName: z
       .string()
       .min(2, "Last Name must be at least 2 characters long")
-      .max(64, "Last Name cannot be more than 64 characters long"),
+      .max(64, "Last Name cannot be more than 64 characters long")
+      .refine((val) => val.trim().length, {
+        message: "Last name is required",
+      }),
     companyName: z
       .string()
       .min(2, "Business Name is required must be at least 2 characters long")
-      .max(64, "Business Name cannot be more than 64 characters long"),
+      .max(64, "Business Name cannot be more than 64 characters long")
+      .refine((val) => val.trim().length, {
+        message: "Company name is required",
+      }),
     email: z
       .string()
       .min(1, "Email is required")
-      .email({ message: "Invalid email" }),
+      .email({ message: "Invalid email" })
+      .refine((val) => val.trim().length, {
+        message: "Email is required",
+      }),
     mobile: z
       .string()
       .min(1, "Phone number is required")
-      .length(11, "Phone number must be of length 11 digits"),
+      .length(11, "Phone number must be of length 11 digits")
+      .refine((val) => val.trim().length, {
+        message: "Phone number is required",
+      }),
     country: z.string().min(1, "Country is required"),
     state: z.string().min(1, "State is required"),
     password: z
@@ -102,11 +124,17 @@ const IFormSchema = z
     firstName: z
       .string()
       .min(2, "First Name must be at least 2 characters long")
-      .max(64, "First Name cannot be more than 64 characters long"),
+      .max(64, "First Name cannot be more than 64 characters long")
+      .refine((val) => val.trim().length, {
+        message: "First name is required",
+      }),
     lastName: z
       .string()
       .min(2, "Last Name must be at least 2 characters long")
-      .max(64, "Last Name cannot be more than 64 characters long"),
+      .max(64, "Last Name cannot be more than 64 characters long")
+      .refine((val) => val.trim().length, {
+        message: "Last name is required",
+      }),
     email: z
       .string()
       .min(1, "Email is required")
@@ -114,7 +142,10 @@ const IFormSchema = z
     mobile: z
       .string()
       .min(1, "Phone number is required")
-      .length(11, "Phone number must be of length 11 digits"),
+      .length(11, "Phone number must be of length 11 digits")
+      .refine((val) => val.trim().length, {
+        message: "Phone number is required",
+      }),
     country: z.string().min(1, "Country is required"),
     state: z.string().min(1, "State is required"),
     password: z
@@ -161,8 +192,10 @@ const IFormSchema = z
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const router = useRouter();
+  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState([]);
 
+  const router = useRouter();
   const search = useSearchParams();
   const type = search.get("type");
 
@@ -171,6 +204,20 @@ export default function SignUp() {
       router.push("/");
     }
   }, []);
+
+  const { data } = useSWR(`/options/countries`, () =>
+    $api({ url: `/options/countries` })
+  );
+
+  useEffect(() => {
+    if (data) {
+      const countries = data.data;
+      const states = data.data[0].states;
+
+      setCountries(countries);
+      setStates(states);
+    }
+  }, [data]);
 
   const form = useForm<BFormData | IFormData>({
     resolver: zodResolver(type === "business" ? BFormSchema : IFormSchema),
@@ -203,7 +250,6 @@ export default function SignUp() {
         method: "post",
         data: rest,
       });
-      console.log(res);
 
       // Create cookie with the user login credentials to use to log
       // them in when they verify their account
@@ -214,24 +260,15 @@ export default function SignUp() {
         `/signup/verify-account?token=${token}&email=${formData.email}`
       );
     } catch (error: any) {
-      if (!error.res.success) {
-        toast({
-          variant: "destructive",
-          duration: 1000 * 60,
-          title: splitCamelCaseText(error.res.name) || undefined,
-          description:
-            (error.res.name === "validationError"
-              ? error.res.data[0]?.message
-              : error.res.data.message) ||
-            "An error occured while creating your account, please try again",
-        });
-        return;
-      }
-
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Ooops..., an error has occured",
+        duration: 1000 * 60,
+        title: splitCamelCaseText(error.name) || undefined,
+        description:
+          (error.name === "validationError"
+            ? error.data[0]?.message
+            : error.data.message) ||
+          "An error occured while creating your account, please try again",
       });
     }
   }
@@ -312,9 +349,10 @@ export default function SignUp() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="">Company Email</FormLabel>
+                      <FormLabel className=""></FormLabel>
+                      {type === "business" ? "Company Email" : "Email"}
                       <FormControl>
-                        <Input type="email" {...field} />
+                        <Input type="email" {...field} required />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -339,10 +377,27 @@ export default function SignUp() {
                     name="country"
                     render={({ field }) => (
                       <FormItem className="w-full">
-                        <FormLabel className="">Country</FormLabel>
-                        <FormControl>
-                          <Input type="text" {...field} disabled />
-                        </FormControl>
+                        <FormLabel>Country</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="max-h-80">
+                            {countries.map((country: any) => (
+                              <SelectItem
+                                key={country.alpha2Code}
+                                value={country.name}
+                              >
+                                {country.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -352,10 +407,24 @@ export default function SignUp() {
                     name="state"
                     render={({ field }) => (
                       <FormItem className="w-full">
-                        <FormLabel className="">State</FormLabel>
-                        <FormControl>
-                          <Input type="text" {...field} />
-                        </FormControl>
+                        <FormLabel>State</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="max-h-80">
+                            {states.map((state: any) => (
+                              <SelectItem key={state} value={state}>
+                                {state}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -491,4 +560,10 @@ export default function SignUp() {
       <Footer />
     </Layout>
   );
+}
+function useSWRImmutable(
+  arg0: string,
+  arg1: () => any
+): { data: any; error: any; isLoading: any } {
+  throw new Error("Function not implemented.");
 }

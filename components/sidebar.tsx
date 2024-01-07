@@ -1,22 +1,10 @@
-import { useContext } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  Sidebar as ProSidebar,
-  Menu,
-  MenuItem,
-  menuClasses,
-  sidebarClasses,
-} from "react-pro-sidebar";
 import { ChevronLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  SidebarWidthContext,
-  type SidebarWidthContextProps,
-} from "@/context/sidebarWidthProvider";
-import Logo from "./svg/logo";
 import {
   DashboardIcon,
   HelpIcon,
@@ -28,176 +16,288 @@ import {
   TeamIcon,
   UserIcon,
 } from "./svg";
-import { Session } from "next-auth";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipPortal,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { User } from "@/types";
+import { useSidebarWidth } from "@/context/sidebarWidthProvider";
 
-const SIDEBARITEMS = [
-  {
-    icon: <DashboardIcon />,
+export const SIDEBARITEMS = {
+  dashboard: {
+    icon: DashboardIcon,
     href: "/dashboard",
-    label: "Dashboard",
+    type: "",
+    requireVerification: true,
   },
-  {
-    icon: <BusinessIcon />,
+  partners: {
+    icon: BusinessIcon,
     href: "/partners",
-    label: "Partners",
     type: "admin",
+    requireVerification: true,
+    children: [
+      {
+        icon: DashboardIcon,
+        href: `/dashboard`,
+        label: "Dashboard",
+      },
+      {
+        icon: ReportIcon,
+        href: `/reports`,
+        label: "Reports",
+      },
+      {
+        icon: TeamIcon,
+        href: `/team`,
+        label: "Team",
+      },
+      {
+        icon: BusinessIcon,
+        href: `/manage-partner`,
+        label: "Manage Partner",
+      },
+      {
+        icon: SettlementIcon,
+        href: `/settlements`,
+        label: "Settlements",
+      },
+    ],
   },
-  {
-    icon: <CustomerIcon />,
+  customers: {
+    icon: CustomerIcon,
     href: "/customers",
-    label: "Customers",
     type: "admin",
+    requireVerification: true,
   },
-  {
-    icon: <ReportIcon />,
+  reports: {
+    icon: ReportIcon,
     href: "/reports",
-    label: "Reports",
+    type: "",
+    requireVerification: true,
   },
-  {
-    icon: <DeliveryIcon />,
-    href: "/deliveries",
-    label: "Deliveries",
-    type: "individual",
-  },
-  {
-    icon: <SettlementIcon />,
+  // deliveries: {
+  //   icon: DeliveryIcon,
+  //   href: "/deliveries",
+  //   type: "individual",
+  //   requireVerification: true,
+  // },
+  settlements: {
+    icon: SettlementIcon,
     href: "/settlements",
-    label: "Settlements",
+    type: "",
+    requireVerification: true,
   },
-  {
-    icon: <TeamIcon />,
+  team: {
+    icon: TeamIcon,
     href: "/team",
-    label: "Team",
     type: "business admin",
+    requireVerification: true,
   },
-  {
-    icon: <UserIcon />,
-    href: "/profile",
-    label: "Profile",
-    notRequireVerification: true,
-  },
-];
-
-type Props = {
-  user: Session["user"];
+  // profile: {
+  //   icon: UserIcon,
+  //   href: "/profile",
+  //   type: "",
+  //   notRequireVerification: true,
+  //   requireVerification: false,
+  // },
 };
 
-export default function Sidebar({ user }: Props) {
-  const { collapsed, handleCollapsed } =
-    useContext<SidebarWidthContextProps>(SidebarWidthContext);
+type Props = {
+  user?: User | null;
+  active?: string;
+  hasChild: boolean;
+};
+
+export default function Sidebar({ user, active, hasChild }: Props) {
+  const { collapsed, handleCollapsed } = useSidebarWidth();
+  const [isBrowser, setBrowser] = useState(false);
+
+  useEffect(() => {
+    setBrowser(true);
+  }, []);
+
+  const getUserPerms = () => {
+    if (user?.type === "admin") {
+      // @ts-ignore
+      let perms: string[] = [];
+      (user.role.permissions as string[]).forEach((perm: string) => {
+        let page = perm.split(":")[0];
+
+        if (!perms.includes(page.toLowerCase())) perms.push(page);
+      });
+      return perms;
+    }
+    return user?.role.permissions as string[];
+  };
+  const isSuperAdmin =
+    user?.role.slug === "business-super-admin" ||
+    user?.role.slug === "individual-super-admin" ||
+    user?.role.slug === "skippa-super-admin";
+  const isRider = (label: string) =>
+    user?.role.slug === "business-riders" &&
+    (user.role.permissions as string[]).includes(label);
+  const isCustom = (label: string) =>
+    user?.role.isCustom && getUserPerms().includes(label);
+
+  const getSidebarItems = () => {
+    const items =
+      user?.type === "admin" || user?.status === "activated"
+        ? Object.entries(SIDEBARITEMS)
+            .filter(([_, item]) => !item.type || item.type.includes(user.type))
+            .filter(
+              ([label, _]) => isSuperAdmin || isRider(label) || isCustom(label)
+            )
+        : [];
+    return items.map(([label, item]) => ({ ...item, label }));
+  };
+
+  const sidebarItems = getSidebarItems();
 
   return (
-    <>
-      <ProSidebar
-        rootStyles={{
-          position: "fixed",
-          bottom: 0,
-          top: 0,
-          left: 0,
-          color: "white",
-          backgroundColor: "#272E2D",
-          ["." + sidebarClasses.container]: {
-            height: "100%",
-          },
-        }}
-        collapsed={collapsed}
-        // toggled={toggled}
-        // onBreakPoint={setBroken}
-        // onBackdropClick={handleToggled}
-        // breakPoint="md"
-        backgroundColor="#272E2D"
-        width="16rem"
-      >
-        <SidebarHeader />
-        <div className={cn("transition-all", !collapsed && "my-8 md:my-12")}>
-          <h2
-            className={cn(
-              "font-bold transition-opacity py-6 delay-200 pr-8 pl-16",
-              collapsed && "opacity-0"
-            )}
+    <aside
+      className={cn(
+        "text-white bg-primary-darker transition-all w-min fixed top-0 overflow-y-auto left-0 z-30 h-full",
+        collapsed ? "w-14" : "w-64"
+      )}
+    >
+      <SidebarMenu collapsed={collapsed} name={user?.company}>
+        {sidebarItems.map((item) => (
+          <SidebarItem
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            collapsed={collapsed}
+            active={active === item.label.toLowerCase()}
           >
-            {user.business.companyName}
-          </h2>
-          <SidebarMenu user={user} />
-        </div>
-      </ProSidebar>
-      <Button
-        variant="ghost"
-        className={cn(
-          "rounded-full absolute h-9 w-9 items-center justify-center p-0 top-3 z-20 duration-300 transition-all hover:bg-primary-dark bg-primary-darker",
-          collapsed ? "left-16" : "left-[14.5rem]"
-          // broken ? "hidden" : "flex"
-        )}
-        onClick={handleCollapsed}
-      >
-        {
-          <ChevronLeft
+            {item.icon({
+              className: "w-5 h-5",
+              color:
+                active === item.label.toLowerCase() ? "#FFFFFF" : "#C7C7C7",
+            })}
+            {item.label}
+          </SidebarItem>
+        ))}
+        <SidebarItem
+          href="/profile"
+          collapsed={collapsed}
+          label="Profile"
+          active={active === "profile"}
+        >
+          <UserIcon className="w-5 h-5 fill-current" />
+          Profile
+        </SidebarItem>
+        <SidebarItem
+          href="/faqs"
+          collapsed={collapsed}
+          label="Help & Support"
+          external
+        >
+          <HelpIcon className="w-5 h-5 fill-current" />
+          Help & Support
+        </SidebarItem>
+      </SidebarMenu>
+      {isBrowser &&
+        !hasChild &&
+        createPortal(
+          <Button
+            variant="ghost"
             className={cn(
-              "w-7 h-7 text-white transition-transform",
-              collapsed && "rotate-180"
+              "rounded-full fixed h-8 w-8 items-center justify-center p-0 top-3 z-50 duration-300 transition-all hover:bg-primary-dark bg-primary-darker",
+              collapsed ? "left-14" : "left-56"
             )}
-          />
-        }
-      </Button>
-    </>
+            onClick={() => handleCollapsed()}
+          >
+            <ChevronLeft
+              className={cn(
+                "w-5 h-5 text-white transition-transform",
+                collapsed && "rotate-180"
+              )}
+            />
+          </Button>,
+          document.body
+        )}
+    </aside>
   );
 }
 
-const SidebarHeader = () => {
+export const SidebarMenu = ({
+  children,
+  collapsed,
+  name,
+}: {
+  children: React.ReactNode;
+  name?: string;
+  collapsed: boolean;
+}) => {
   return (
-    <Link href="/dashboard" className="flex items-center px-5 h-14 sm:h-16">
-      <span className="w-full overflow-hidden flex items-center gap-3">
-        <Logo />
-        <h1 className="truncate font-bold text-xl">Skippa</h1>
-      </span>
-    </Link>
+    <nav className="flex mt-14 flex-1 flex-col overflow-hidden py-4 md:py-12">
+      <h2
+        className={cn(
+          "font-semibold transition-opacity pr-8 pl-14 py-6 truncate text-[#C7C7C7]",
+          collapsed ? "opacity-0" : "opacity-100"
+        )}
+      >
+        {name}
+      </h2>
+      <ul className="">{children}</ul>
+    </nav>
   );
 };
 
-const SidebarMenu = ({ user }: { user: Session["user"] }) => {
-  const pathname = usePathname();
-
-  const isActive = (item: string) => {
-    const pattern = `^${item}(/[\\w/-]+)?$`;
-    const regex = new RegExp(pattern);
-    return regex.test(pathname);
-  };
-
-  const sidebar =
-    user.type === "admin" || user.business.isVerified
-      ? SIDEBARITEMS.filter(
-          (item) => !item.type || item.type.includes(user.type)
-        )
-      : SIDEBARITEMS.filter((item) => item.notRequireVerification);
-
+export const SidebarItem = ({
+  active,
+  children,
+  href,
+  label,
+  external,
+  collapsed,
+}: {
+  active?: boolean;
+  collapsed: boolean;
+  external?: boolean;
+  children: React.ReactNode;
+  href: string;
+  label: string;
+}) => {
   return (
-    <Menu
-      rootStyles={{
-        ["." + menuClasses.button]: {
-          height: "4rem",
-          fontSize: "16px",
-          fontWeight: 700,
-          color: "white",
-          borderTop: "1px solid rgba(39, 52, 48, 1)",
-          "&:hover": {
-            backgroundColor: "#4AB9AD",
-          },
-        },
-        ["." + menuClasses.active]: {
-          backgroundColor: "#4AB9AD",
-        },
-      }}
-    >
-      {sidebar.map((item, i) => (
-        <MenuItem
-          key={i}
-          active={isActive(item.href)}
-          component={<Link href={item.href} title={item.label} />}
-          icon={item.icon}
+    <li className="relative">
+      {collapsed ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="w-full">
+              <Link
+                href={href}
+                className={cn(
+                  "h-16 font-bold border-t px-4 capitalize border-[#2f3435] hover:bg-primary flex items-center gap-5 hover:text-white",
+                  active ? "bg-primary text-white" : "text-[#C7C7C7]"
+                )}
+                target={external ? "_blank" : ""}
+              >
+                {children}
+              </Link>
+            </TooltipTrigger>
+            <TooltipPortal>
+              <TooltipContent className="text-base font-bold bg-primary-darker py-2 rounded px-4">
+                <p className="capitalize">{label}</p>
+              </TooltipContent>
+            </TooltipPortal>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <Link
+          href={href}
+          className={cn(
+            "h-16 font-bold border-t px-4 capitalize border-[#2f3435] hover:bg-primary flex items-center gap-5 hover:text-white",
+            active ? "bg-primary text-white" : "text-[#C7C7C7]"
+          )}
+          target={external ? "_blank" : ""}
         >
-          {item.label}
-        </MenuItem>
-      ))}
-    </Menu>
+          {children}
+        </Link>
+      )}
+    </li>
   );
 };

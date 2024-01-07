@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import DOMPurify from "isomorphic-dompurify";
+import { marked } from "marked";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -57,3 +59,35 @@ export function dobRange() {
 export function isObjectEmpty(obj: Object) {
   return Object.keys(obj).length === 0 && obj.constructor === Object;
 }
+
+export function getStatus() {
+  return {
+    activated: {
+      color: "#00462A",
+      bgColor: "#5FDBA7",
+    },
+    suspended: {
+      color: "#555F64",
+      bgColor: "#C1CFD4",
+    },
+    "pending-activation": {
+      color: "#478296",
+      bgColor: "#ADD8E6",
+    },
+    "processing-activation": {
+      color: "#4EC6C6",
+      bgColor: "#008080",
+    },
+    rejected: {
+      color: "#F1B8B8",
+      bgColor: "#FD4141",
+    },
+    pending: {
+      color: "#A6A642",
+      bgColor: "#FFFF99",
+    },
+  };
+}
+
+export const getSanitizedMarkup = (content: string) =>
+  DOMPurify.sanitize(marked.parse(content) as string);

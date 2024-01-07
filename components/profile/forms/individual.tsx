@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import useSWR, { mutate } from "swr";
 import { useForm } from "react-hook-form";
-import { Session } from "next-auth";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon, Edit2, Plus, Upload, X } from "lucide-react";
@@ -29,19 +29,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn, dobRange, validatePassport } from "@/lib/utils";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import $api from "@/lib/axios";
+import { User } from "@/types";
+import useSession from "@/hooks/session";
 
 const CATEGORIES = ["motorcycle", "car", "van", "truck"];
-
-function passportLoader({ src, width }: { src: string; width: number }) {
-  const params = ["c_scale", "f_auto", `w_${width}`, "q_auto"];
-  return `https://res.cloudinary.com/drgtk7a9s/image/upload/${params.join(
-    ","
-  )}${src}`;
-}
 
 type FormDataType = z.infer<typeof IProfileFormSchema>;
 
@@ -51,24 +53,30 @@ export interface SocMedia {
 }
 
 type Props = {
-  user: Session["user"] & { token: string };
+  data: any;
+  user: User;
+  token: string | null;
 };
 
 const uploadFiles = async (file: FormData) => {
+  // const headers = new Headers({
+  //   "Content-Type": "multipart/form-data",
+  // });
+
   return await fetch(`/api/uploads`, {
     method: "POST",
+    // headers,
     body: file,
   });
 };
 
 const deleteFiles = async (id: string) => {
-  return await fetch(`/api/uploads`, {
-    method: "PUT",
-    body: JSON.stringify({ id }),
+  return await fetch(`/api/uploads/${id}`, {
+    method: "DELETE",
   });
 };
 
-export default function IndividualForm({ user }: Props) {
+export default function IndividualForm({ token, data, user }: Props) {
   const [isEditing, setEditing] = useState(false);
   const [isPaperUploading, setPaperUploading] = useState(false);
   const [isImageUploading, setImageUploading] = useState(false);
@@ -76,70 +84,78 @@ export default function IndividualForm({ user }: Props) {
   const [passportError, setPassportError] = useState<string>();
   const [vPapers, setVPapers] = useState<Record<string, string>[]>([]);
   const [vPapersError, setVPaperError] = useState<string>();
-  const [business, seteBusiness] = useState(user.business);
+  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState([]);
 
+  const business = data.business;
+  const { update } = useSession();
   const form = useForm<FormDataType>({
     resolver: zodResolver(IProfileFormSchema),
-    mode: "onBlur",
+    mode: "onSubmit",
     defaultValues: {
-      vehicleNumber: business.merchantInformation?.vehicleNumber || "",
-      driversLicense: business.merchantInformation?.driversLicense || "",
-      dateOfBirth:
-        new Date(business.contactInformation?.person.dateOfBirth) || undefined,
-      image: business.contactInformation?.person.image || "",
-      vehiclePapers: business.document || [],
-      deliveryCategory: Object.entries(business.deliveryVehicleInformation)
-        .filter(([categorory, value]) => {
-          const val = value as { available: boolean; count: number };
-          return val.available;
-        })
-        .map(([category, _]) => category),
+      vehicleNumber: business?.merchantInformation?.vehicleNumber || "",
+      driversLicense: business?.merchantInformation?.driversLicense || "",
+      dateOfBirth: business?.contactInformation?.person.dateOfBirth
+        ? new Date(business?.contactInformation?.person.dateOfBirth)
+        : undefined,
+      image: business?.contactInformation?.person.image || "",
+      vehiclePapers: business?.document || [],
+      deliveryCategory: business?.deliveryVehicleInformation
+        ? Object.entries(business?.deliveryVehicleInformation)
+            .filter(([_, value]) => {
+              const val = value as { available: boolean; count: number };
+              return val.available;
+            })
+            .map(([category, _]) =>
+              category === "bike" ? "motorcycle" : category
+            )
+        : [],
       bankAccountDetail: {
-        accountNumber: business.paymentDetails.accountNumber || "",
-        bankName: business.paymentDetails.bankName || "",
+        accountNumber: business?.paymentDetails.accountNumber || "",
+        bankName: business?.paymentDetails.bankName || "",
       },
       addressDetail: {
         flatNumber:
-          business.contactInformation?.registeredAddress.flatNumber || "",
-        landmark: business.contactInformation?.registeredAddress.landmark || "",
+          business?.contactInformation?.registeredAddress.flatNumber || "",
+        landmark:
+          business?.contactInformation?.registeredAddress.landmark || "",
         buildingNumber:
-          business.contactInformation?.registeredAddress.buildingNumber || "",
+          business?.contactInformation?.registeredAddress.buildingNumber || "",
         buildingName:
-          business.contactInformation?.registeredAddress.buildingName || "",
-        street: business.contactInformation?.registeredAddress.street || "",
+          business?.contactInformation?.registeredAddress.buildingName || "",
+        street: business?.contactInformation?.registeredAddress.street || "",
         subStreet:
-          business.contactInformation?.registeredAddress.subStreet || "",
-        country: business.contactInformation?.registeredAddress.country || "",
-        state: business.contactInformation?.registeredAddress.state || "",
-        city: business.contactInformation?.registeredAddress.city || "",
+          business?.contactInformation?.registeredAddress.subStreet || "",
+        country: business?.contactInformation?.registeredAddress.country || "",
+        state: business?.contactInformation?.registeredAddress.state || "",
+        city: business?.contactInformation?.registeredAddress.city || "",
       },
     },
   });
   const { toast } = useToast();
+  const { data: res } = useSWR(`/options/countries`, () =>
+    $api({ url: `/options/countries` })
+  );
   const { dateFrom, dateTo, defaultMonth } = dobRange();
 
   useEffect(() => {
-    const biz = localStorage.getItem("skippa-business");
-
-    if (biz) {
-      seteBusiness(biz);
-    }
-
     const image = business.contactInformation?.person.image || "";
-    const vPapers = business.documents;
+    const vp = business.documents;
 
     setPassport({
-      src: image.split("upload")[1],
       url: image,
     });
 
-    if (vPapers) {
-      const papers = vPapers.map((paper: any) => ({
-        url: paper.vehicalPaperImages,
-        type: paper.type,
-        name: paper.name,
-        src: paper.vehicalPaperImages?.split("upload")[1] || "",
-      }));
+    if (vp.length) {
+      const papers = vp.map((paper: any) => {
+        // if (!paper.vehicalPaperImages) setVPaperError("Invalid image url");
+
+        return {
+          url: paper.vehicalPaperImages || "",
+          type: paper.type,
+          name: paper.name,
+        };
+      });
       setVPapers(papers);
       const papersUrl = papers.map((paper: any) => ({
         vehicalPaperImages: paper.url,
@@ -151,6 +167,16 @@ export default function IndividualForm({ user }: Props) {
       form.setValue("vehiclePapers", papersUrl);
     }
   }, []);
+
+  useEffect(() => {
+    if (res) {
+      const countries = res.data;
+      const states = res.data[0].states;
+
+      setCountries(countries);
+      setStates(states);
+    }
+  }, [res]);
 
   const convertBase64 = (file: File) => {
     return new Promise<string>((resolve, reject) => {
@@ -188,19 +214,20 @@ export default function IndividualForm({ user }: Props) {
 
       try {
         const res = await uploadFiles(imgForm);
+        const data = await res.json();
 
-        if (!res?.ok) {
+        if (!data.success) {
           toast({
+            duration: 1000 * 5,
             variant: "destructive",
-            duration: 1000 * 60 * 8,
             title: "Error",
             description:
+              data.message ||
               "An error occured uploading your passport photo, please try again",
           });
           return;
         }
 
-        const data = await res.json();
         const img = {
           name: file.name,
           size: Math.round(Number(data.bytes) / 1024) + "kb",
@@ -215,6 +242,7 @@ export default function IndividualForm({ user }: Props) {
         });
       } catch (error) {
         toast({
+          duration: 1000 * 5,
           variant: "destructive",
           title: "Error",
           description: "Ooops..., an error has occured, please try again",
@@ -258,12 +286,13 @@ export default function IndividualForm({ user }: Props) {
       const res = await uploadFiles(imgForm);
       const data = await res.json();
 
-      if (!res?.ok) {
+      if (!data.success) {
         toast({
+          duration: 1000 * 5,
           variant: "destructive",
-          duration: 1000 * 60 * 8,
           title: "Error",
           description:
+            data.message ||
             "An error occured uploading your passport photo, please try again",
         });
         return;
@@ -288,6 +317,7 @@ export default function IndividualForm({ user }: Props) {
       form.setValue("vehiclePapers", papersUrl, { shouldValidate: true });
     } catch (error) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -304,14 +334,14 @@ export default function IndividualForm({ user }: Props) {
       setPaperUploading(true);
       const res = await deleteFiles(paper.id);
       const data = await res.json();
-      console.log(data);
 
-      if (data.result !== "ok") {
+      if (!data.success) {
         toast({
+          duration: 1000 * 5,
           variant: "destructive",
-          duration: 1000 * 60 * 8,
           title: "Error",
-          description: "Failed to delete vehicle paper, please try again",
+          description:
+            data.message || "Failed to remove vehicle paper, please try again",
         });
         return;
       }
@@ -320,6 +350,7 @@ export default function IndividualForm({ user }: Props) {
       localStorage.setItem("vPapers", JSON.stringify(vpapersArr));
     } catch (error) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -330,6 +361,7 @@ export default function IndividualForm({ user }: Props) {
   };
 
   async function handleSubmit(formData: FormDataType) {
+    setEditing(false);
     const { deliveryCategory, ...rest } = formData;
 
     const category = {
@@ -342,30 +374,31 @@ export default function IndividualForm({ user }: Props) {
     try {
       const res = await $api({
         method: "post",
-        headers: { Authorization: `Bearer ${user.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         url: "/merchants/individual/account/verification",
         data: { ...rest, deliveryCategory: category },
       });
+      const status = res.data.status;
+      const verificationCount = res.data.verificationChecks;
+
+      mutate({ ...data, business: res.data.business });
+      update({ status, verificationCount });
 
       toast({
+        duration: 1000 * 5,
         variant: "primary",
-        title: splitCamelCaseText(res.data.name) || undefined,
         description:
-          res.data.message || "Your business details was successfully updated",
+          res.message || "Your business details was successfully updated",
       });
-
-      form.reset();
-      localStorage.removeItem("passport");
-      localStorage.removeItem("vPapers");
-      localStorage.setItem("skippa-business", res.data.business);
     } catch (error: any) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:
-          error.data[0]?.message ||
           error.data?.message ||
           error.message ||
+          error.data[0]?.message ||
           "There was a problem with your request, please try again",
       });
     }
@@ -427,7 +460,7 @@ export default function IndividualForm({ user }: Props) {
                 </div>
                 {vPapers.length ? (
                   <div className="flex items-end gap-3">
-                    <ul className="flex items-center gap-2">
+                    <ul className="flex items-center flex-wrap gap-2">
                       {vPapers.map((paper, i) => (
                         <li
                           key={i}
@@ -488,15 +521,14 @@ export default function IndividualForm({ user }: Props) {
                     />
                   )}
                 </div>
-                {passport ? (
+                {passport?.url ? (
                   <div className="flex items-center gap-3">
                     <Avatar className="rounded-none relative">
-                      <AvatarImage asChild src={passport.url}>
+                      <AvatarImage asChild src={passport?.url}>
                         <Image
-                          loader={passportLoader}
                           width={40}
                           height={40}
-                          src={passport.src}
+                          src={passport?.url}
                           alt="Director's passport"
                         />
                       </AvatarImage>
@@ -506,8 +538,8 @@ export default function IndividualForm({ user }: Props) {
                       </span>
                     </Avatar>
                     <span className="text-xs text-gray-600">
-                      <p className="mb-1 font-medium">{passport.name}</p>
-                      <p className="font-medium">{passport.size}</p>
+                      <p className="mb-1 font-medium">{passport?.name}</p>
+                      <p className="font-medium">{passport?.size}</p>
                     </span>
                   </div>
                 ) : (
@@ -536,7 +568,9 @@ export default function IndividualForm({ user }: Props) {
             name="bankAccountDetail.bankName"
             render={({ field }) => (
               <FormItem className="w-full space-y-0">
-                <FormLabel className="">Bank Name</FormLabel>
+                <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
+                  Bank Name
+                </FormLabel>
                 <FormControl>
                   <Input type="text" {...field} disabled={!isEditing} />
                 </FormControl>
@@ -549,7 +583,9 @@ export default function IndividualForm({ user }: Props) {
             name="bankAccountDetail.accountNumber"
             render={({ field }) => (
               <FormItem className="w-full space-y-0">
-                <FormLabel className="">Bank Accont No.</FormLabel>
+                <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
+                  Bank Accont No.
+                </FormLabel>
                 <FormControl>
                   <Input type="text" {...field} disabled={!isEditing} />
                 </FormControl>
@@ -577,9 +613,10 @@ export default function IndividualForm({ user }: Props) {
                           "w-full font-normal",
                           !field.value && "text-muted-foreground"
                         )}
+                        disabled={!isEditing}
                       >
                         {field.value && format(new Date(field.value), "PPP")}
-                        <CalendarIcon className="ml-auto h-4 w-4" />
+                        <CalendarIcon className="ml-auto h-4 w-4 text-primary" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
@@ -609,7 +646,7 @@ export default function IndividualForm({ user }: Props) {
               Categories
               <span className="text-red-600 text-xl leading-none">*</span>
             </FormLabel>
-            <FormItem className="grid grid-cols-2 space-y-0 lg:grid-cols-4 gap-3">
+            <FormItem className="flex items-center gap-6 space-y-0">
               {CATEGORIES.map((category) => (
                 <FormField
                   control={form.control}
@@ -764,13 +801,25 @@ export default function IndividualForm({ user }: Props) {
             name="addressDetail.state"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="">
-                  State
-                  <span className="text-red-600 text-xl leading-none">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
-                </FormControl>
+                <FormLabel>State</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={!isEditing}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-80">
+                    {states.map((state: any) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -780,45 +829,81 @@ export default function IndividualForm({ user }: Props) {
             name="addressDetail.country"
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel className="">
-                  Country
-                  <span className="text-red-600 text-xl leading-none">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
-                </FormControl>
+                <FormLabel>Country</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={!isEditing}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-80">
+                    {countries.map((country: any) => (
+                      <SelectItem key={country.name} value={country.name}>
+                        {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        <div className="w-full flex justify-end">
-          {isEditing ? (
-            <Button
-              disabled={form.formState.isSubmitting || !form.formState.isValid}
-              size="lg"
-              className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
-            >
-              Submit
-              {form.formState.isSubmitting && (
-                <Spinner
-                  twColor="text-white before:bg-white"
-                  twSize="w-4 h-4"
-                  className="ml-3"
-                />
-              )}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="lg"
-              className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
-              onClick={() => setEditing(true)}
-            >
-              Edit
-            </Button>
-          )}
-        </div>
+        {["pending-activation", "rejected", "activated"].includes(
+          user.status
+        ) && (
+          <div className="w-full flex justify-end gap-4">
+            {isEditing ? (
+              <>
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="destructive"
+                  className="font-bold text-lg xl:text-2xl transition-opacity"
+                  onClick={() => {
+                    form.reset();
+                    setEditing(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={form.formState.isSubmitting}
+                  size="lg"
+                  className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
+                >
+                  Submit
+                  {form.formState.isSubmitting && (
+                    <Spinner
+                      twColor="text-white before:bg-white"
+                      twSize="w-4 h-4"
+                      className="ml-3"
+                    />
+                  )}
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="button"
+                size="lg"
+                className="font-bold text-lg xl:text-2xl hover:bg-primary hover:opacity-90 transition-opacity"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setEditing(true);
+                }}
+                disabled={["processing-activation", "activated"].includes(
+                  user.status
+                )}
+              >
+                Edit
+              </Button>
+            )}
+          </div>
+        )}
       </form>
     </Form>
   );

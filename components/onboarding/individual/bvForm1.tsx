@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
 import { UseFormReturn } from "react-hook-form";
-import { CalendarIcon, Edit2, Plus, Upload, X } from "lucide-react";
+import { CalendarIcon, Edit2, HelpCircle, Plus, Upload, X } from "lucide-react";
 import { format } from "date-fns";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
@@ -21,10 +20,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipArrow,
+  TooltipContent,
+  TooltipPortal,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn, dobRange, validatePaper, validatePassport } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import Spinner from "@/components/spinner";
+import useSession from "@/hooks/session";
 
 type FormDataType = UseFormReturn<
   {
@@ -100,7 +108,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
   const [vPapers, setVPapers] = useState<Record<string, string>[]>([]);
   const [vPapersError, setVPaperError] = useState<string>();
 
-  const { data: session } = useSession();
+  const { session } = useSession();
   const { toast } = useToast();
   const { dateFrom, dateTo, defaultMonth } = dobRange();
 
@@ -159,7 +167,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       const imgForm = new FormData();
       imgForm.append("data", data);
       imgForm.append("folder", `onboarding/individual/passports`);
-      imgForm.append("filename", session?.user.id!);
+      imgForm.append("filename", session.user?.id!);
       imgForm.append("upload_preset", "onboarding-passports");
 
       try {
@@ -168,7 +176,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
         if (!res.ok) {
           toast({
             variant: "destructive",
-            duration: 1000 * 60 * 8,
+            duration: 1000 * 5,
             title: "Error",
             description:
               "An error occured uploading your passport photo, please try again",
@@ -192,6 +200,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
         localStorage.setItem("passport", JSON.stringify(img));
       } catch (error) {
         toast({
+          duration: 1000 * 5,
           variant: "destructive",
           title: "Error",
           description: "Ooops..., an error has occured, please try again",
@@ -222,7 +231,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
     }
 
     const dataFile = await convertBase64(file);
-    const userId = session?.user.id!;
+    const userId = session.user?.id!;
 
     const imgForm = new FormData();
     imgForm.append("data", dataFile);
@@ -239,7 +248,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       if (!res.ok) {
         toast({
           variant: "destructive",
-          duration: 1000 * 60 * 8,
+          duration: 1000 * 5,
           title: "Error",
           description:
             "An error occured uploading your passport photo, please try again",
@@ -266,6 +275,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       form.setValue("vehiclePapers", papersUrl, { shouldValidate: true });
     } catch (error) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -287,7 +297,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       if (data.result !== "ok") {
         toast({
           variant: "destructive",
-          duration: 1000 * 60 * 8,
+          duration: 1000 * 5,
           title: "Error",
           description: "Failed to delete vehicle paper, please try again",
         });
@@ -298,6 +308,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       localStorage.setItem("vPapers", JSON.stringify(vpapersArr));
     } catch (error) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -469,7 +480,9 @@ export default function BusinessVerificationForm1({ form }: Props) {
           name="bankAccountDetail.bankName"
           render={({ field }) => (
             <FormItem className="w-full space-y-0">
-              <FormLabel className="">Bank Name</FormLabel>
+              <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
+                Bank Name
+              </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
               </FormControl>
@@ -482,7 +495,9 @@ export default function BusinessVerificationForm1({ form }: Props) {
           name="bankAccountDetail.accountNumber"
           render={({ field }) => (
             <FormItem className="w-full space-y-0">
-              <FormLabel className="">Bank Accont No.</FormLabel>
+              <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
+                Bank Accont No.
+              </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
               </FormControl>
@@ -512,7 +527,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
                       )}
                     >
                       {field.value && format(new Date(field.value), "PPP")}
-                      <CalendarIcon className="ml-auto h-4 w-4" />
+                      <CalendarIcon className="ml-auto h-4 w-4 text-primary" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
@@ -541,8 +556,21 @@ export default function BusinessVerificationForm1({ form }: Props) {
           <FormLabel>
             Categories
             <span className="text-red-600 text-xl leading-none">*</span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <HelpCircle className="w-3 h-3 ml-1" />
+                </TooltipTrigger>
+                <TooltipPortal>
+                  <TooltipContent>
+                    <p>Select a category</p>
+                    <TooltipArrow />
+                  </TooltipContent>
+                </TooltipPortal>
+              </Tooltip>
+            </TooltipProvider>
           </FormLabel>
-          <FormItem className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 space-y-0 lg:grid-cols-4 gap-3">
+          <FormItem className="flex items-center gap-6 space-y-0">
             {CATEGORIES.map((category) => (
               <FormField
                 control={form.control}

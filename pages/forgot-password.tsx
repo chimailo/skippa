@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle } from "lucide-react";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,7 +33,6 @@ const FormSchema = z.object({
 });
 
 export default function ForgotPasswordForm() {
-  const [alert, setAlert] = useState(false);
   const form = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     mode: "onBlur",
@@ -42,28 +41,38 @@ export default function ForgotPasswordForm() {
     },
   });
   const { toast } = useToast();
+  const router = useRouter();
 
   async function onSubmit(data: FormType) {
     try {
-      await $api({ url: `/auth/password/reset`, method: "post", data });
-      form.reset();
-      setAlert(true);
-    } catch (error: any) {
-      if (error.res?.error) {
-        toast({
-          variant: "destructive",
-          title: splitCamelCaseText(error.res.name) || undefined,
-          description:
-            error.res.message ||
-            "There was a problem with your request, please try again",
-        });
-        return;
-      }
+      const res = await $api({
+        url: `/auth/password/reset`,
+        method: "post",
+        data,
+      });
 
       toast({
+        duration: 1000 * 5,
+        variant: "primary",
+        title: splitCamelCaseText(res.name) || undefined,
+        description:
+          res.message ||
+          "A Link to reset your password was successfully sent to your email.",
+      });
+      form.reset();
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 9000);
+    } catch (error: any) {
+      toast({
+        duration: 1000 * 5,
         variant: "destructive",
-        title: "Error",
-        description: "Ooops..., an error has occured",
+        title: splitCamelCaseText(error?.data?.name) || undefined,
+        description:
+          error?.data?.message ||
+          error?.message ||
+          "There was a problem with your request, please try again",
       });
     }
   }
@@ -88,15 +97,6 @@ export default function ForgotPasswordForm() {
                     your new password
                   </p>
                 </div>
-                {alert && (
-                  <Alert variant="primary">
-                    <CheckCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      An email with a link to reset your password has been sent
-                      to the provided email address
-                    </AlertDescription>
-                  </Alert>
-                )}
                 <FormField
                   control={form.control}
                   name="email"

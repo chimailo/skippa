@@ -1,27 +1,20 @@
-"use client";
-
-import { ReactNode, createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export type SidebarWidthContextProps = {
   collapsed: boolean;
-  handleCollapsed: () => void;
-  // toggled: boolean;
-  // broken: boolean;
-  // handleToggled: () => void;
-  // setBroken: React.Dispatch<React.SetStateAction<boolean>>;
+  handleCollapsed: (val?: boolean) => void;
 };
 
-export const SidebarWidthContext = createContext<SidebarWidthContextProps>({
+const SidebarWidthContext = createContext<SidebarWidthContextProps>({
   collapsed: false,
   handleCollapsed: () => {},
-  // toggled: false,
-  // broken: false,
-  // handleToggled: () => {},
-  // setBroken: () => {},
 });
 
+export const useSidebarWidth = () =>
+  useContext<SidebarWidthContextProps>(SidebarWidthContext);
+
 type Props = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export default function SidebarWidthProvider({ children }: Props) {
@@ -33,20 +26,15 @@ export default function SidebarWidthProvider({ children }: Props) {
     }
   }, []);
 
-  // const [toggled, setToggled] = useState(false);
-  // const [broken, setBroken] = useState(false);
-
-  const handleCollapsed = () => setCollapsed(!collapsed);
-
-  // const handleToggled = () => setToggled(!toggled);
-
-  // const handleBroken = () => {
-  //   // console.log(broken);
-  //   setBroken(!broken);
-  // };
+  const handleCollapsed = (val?: boolean) => setCollapsed(val || !collapsed);
 
   return (
-    <SidebarWidthContext.Provider value={{ collapsed, handleCollapsed }}>
+    <SidebarWidthContext.Provider
+      value={{
+        collapsed,
+        handleCollapsed,
+      }}
+    >
       {children}
     </SidebarWidthContext.Provider>
   );

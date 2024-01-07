@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { UseFormReturn } from "react-hook-form";
 
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipArrow,
+  TooltipContent,
+  TooltipPortal,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import $api from "@/lib/axios";
+import { HelpCircle } from "lucide-react";
 
 export interface SocMedia {
   name: "twitter" | "facebook" | "instagram";
@@ -73,6 +84,32 @@ export default function BusinessVerificationForm2({
   setSocMedia,
 }: Props) {
   const [socialMediaFormCount, setSocialMediaFormCount] = useState(1);
+  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState([]);
+
+  const { data } = useSWR(`/options/countries`, () =>
+    $api({ url: `/options/countries` })
+  );
+
+  useEffect(() => {
+    if (data) {
+      const countries = data.data;
+      const states = data.data[0].states;
+
+      setCountries(countries);
+      setStates(states);
+    }
+  }, [data]);
+
+  const handleAddSocialMedia = () => {
+    if (socialMediaFormCount === 3) return;
+    setSocialMediaFormCount(socialMediaFormCount + 1);
+  };
+
+  const handleRemoveSocialMedia = () => {
+    if (socialMediaFormCount === 1) return;
+    setSocialMediaFormCount(socialMediaFormCount - 1);
+  };
 
   return (
     <>
@@ -81,8 +118,21 @@ export default function BusinessVerificationForm2({
           <FormLabel>
             Categories
             <span className="text-red-600 text-xl leading-none">*</span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <HelpCircle className="w-3 h-3 ml-1" />
+                </TooltipTrigger>
+                <TooltipPortal>
+                  <TooltipContent>
+                    <p>Select a category</p>
+                    <TooltipArrow />
+                  </TooltipContent>
+                </TooltipPortal>
+              </Tooltip>
+            </TooltipProvider>
           </FormLabel>
-          <FormItem className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 space-y-0 lg:grid-cols-4 gap-3">
+          <FormItem className="flex items-center gap-6 space-y-0">
             {CATEGORIES.map((category) => (
               <FormField
                 control={form.control}
@@ -123,14 +173,6 @@ export default function BusinessVerificationForm2({
                 Social Media Handle
               </h2>
             </div>
-            <Button
-              variant="outline"
-              className="w-6 h-6 flex items-center justify-center text-lg leading-none"
-              type="button"
-              onClick={() => setSocialMediaFormCount(socialMediaFormCount + 1)}
-            >
-              +
-            </Button>
           </div>
           {Array.from({ length: socialMediaFormCount }, (_, k) => (
             <div key={k} className="grid grid-cols-3 gap-4">
@@ -191,6 +233,24 @@ export default function BusinessVerificationForm2({
               />
             </div>
           ))}
+          <div className="flex items-center gap-5 justify-end">
+            <Button
+              variant="outline"
+              className="w-6 h-6 flex items-center justify-center text-lg leading-none"
+              type="button"
+              onClick={handleAddSocialMedia}
+            >
+              +
+            </Button>
+            <Button
+              variant="outline"
+              className="w-6 h-6 flex items-center justify-center text-lg leading-none"
+              type="button"
+              onClick={handleRemoveSocialMedia}
+            >
+              -
+            </Button>
+          </div>
         </div>
       </div>
       <div className="block sm:grid sm:grid-cols-2 gap-3 space-y-8 sm:space-y-0">
@@ -199,7 +259,9 @@ export default function BusinessVerificationForm2({
           name="bankAccountDetail.bankName"
           render={({ field }) => (
             <FormItem className="w-full space-y-0">
-              <FormLabel className="">Bank Name</FormLabel>
+              <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
+                Bank Name
+              </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
               </FormControl>
@@ -212,7 +274,9 @@ export default function BusinessVerificationForm2({
           name="bankAccountDetail.accountNumber"
           render={({ field }) => (
             <FormItem className="w-full space-y-0">
-              <FormLabel className="">Bank Accont No.</FormLabel>
+              <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
+                Bank Accont No.
+              </FormLabel>
               <FormControl>
                 <Input type="text" {...field} />
               </FormControl>
@@ -221,7 +285,7 @@ export default function BusinessVerificationForm2({
           )}
         />
       </div>
-      <h2 className="font-semibold text-sm">Address Details</h2>
+      <h2 className="font-semibold text-sm">Office Address</h2>
       <div className="block sm:grid sm:grid-cols-2 gap-3 space-y-8 sm:space-y-0">
         <div className="grid grid-cols-3 gap-2">
           <FormField
@@ -341,29 +405,51 @@ export default function BusinessVerificationForm2({
           name="addressDetail.state"
           render={({ field }) => (
             <FormItem className="w-full">
-              <FormLabel className="">
+              <FormLabel>
                 State
                 <span className="text-red-600 text-xl leading-none">*</span>
               </FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="max-h-80">
+                  {states.map((state: any) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
         <FormField
           control={form.control}
-          name="addressDetail.country"
+          name="addressDetail.state"
           render={({ field }) => (
             <FormItem className="w-full">
-              <FormLabel className="">
+              <FormLabel>
                 Country
                 <span className="text-red-600 text-xl leading-none">*</span>
               </FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="max-h-80">
+                  {countries.map((country: any) => (
+                    <SelectItem key={country.alpha2Code} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

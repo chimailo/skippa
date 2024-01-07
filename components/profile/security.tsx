@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Session } from "next-auth";
+import { User } from "@/types";
 
-export default function Security({ user }: { user: Session["user"] }) {
+export default function Security({ user }: { user: User }) {
   const dateAdded = user.role.createdAt as string;
   const permissions = user.role.permissions as string[];
 

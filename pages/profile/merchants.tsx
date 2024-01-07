@@ -1,53 +1,100 @@
+import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { getIronSession } from "iron-session";
+import useSWR from "swr";
 
 import BusinessForm from "@/components/profile/forms/business";
 import IndividualForm from "@/components/profile/forms/individual";
-import Spinner from "@/components/spinner";
-import Layout from "@/components/layout";
-import UserSection from "@/components/profile/user";
+import ProfileLayout from "@/components/profile/layout";
+import ProfileSkeleton from "@/components/loading/profile";
+import { useToast } from "@/components/ui/use-toast";
+import FetchError from "@/components/error";
+import useSession from "@/hooks/session";
+import { sessionOptions } from "@/lib/session";
+import { SessionData } from "@/types";
+import $api from "@/lib/axios";
+import { splitCamelCaseText } from "@/lib/utils";
 
-export default function MerchantProfile() {
+export default function MerchantProfile({
+  session,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const { signOut, update } = useSession();
+  const { toast } = useToast();
   const router = useRouter();
-  const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      router.push("/login");
-    },
-  });
 
-  if (status === "loading") {
-    <div className="w-full py-12 flex items-center justify-center">
-      <Spinner twColor="text-primary before:bg-primary" twSize="w-8 h-8" />
-    </div>;
-  }
+  const { data, error, isLoading } = useSWR(
+    `/users/me`,
+    () => $api({ token: session.token, url: `/users/me` }),
+    {
+      onSuccess(data) {
+        const status = data.data.business.status;
+        update({ ...session.user, status });
+      },
+      onError(err) {
+        if (err.data.name === "UnauthorizedError") {
+          signOut();
+          toast({
+            duration: 1000 * 5,
+            variant: "destructive",
+            title: splitCamelCaseText(error.name) || undefined,
+            description:
+              error.message ||
+              error.data?.message ||
+              "Your session has expired",
+          });
+          router.push(`/login?callbackUrl=/profile`);
+          return;
+        }
+      },
+    }
+  );
 
   return (
-    <Layout auth sidebar={{ active: "profile" }}>
-      {!session?.user.business.isVerified && (
-        <div className="bg-[#4CD964] rounded-t-lg py-1 px-3 text-center text-sm font-medium uppercase text-white">
-          We are currently verifying your details. You will BE NOTIFIED once the
-          verification process is complete.
-        </div>
-      )}
-      {session && (
-        <div className="block sm:flex space-y-4 sm:space-y-0 px-5 md:py-14 py-7 ">
-          <UserSection user={session.user} />
-          <div className="py-5 sm:border-l-2 border-zinc-300 flex-1">
+    <>
+      {session.user && (
+        <ProfileLayout user={session.user}>
+          {isLoading ? (
+            <ProfileSkeleton />
+          ) : error ? (
+            <FetchError message={error.message} />
+          ) : (
             <section className="sm:px-5">
-              {session!.user.type === "business" ? (
+              {session.user.type === "business" ? (
                 <BusinessForm
-                  user={{ ...session.user, token: session.token }}
+                  data={data?.data}
+                  token={session.token}
+                  user={session.user}
                 />
               ) : (
                 <IndividualForm
-                  user={{ ...session.user, token: session.token }}
+                  data={data?.data}
+                  token={session.token}
+                  user={session.user}
                 />
               )}
             </section>
-          </div>
-        </div>
+          )}
+        </ProfileLayout>
       )}
-    </Layout>
+    </>
   );
 }
+
+export const getServerSideProps = (async (context) => {
+  const session = await getIronSession<SessionData>(
+    context.req,
+    context.res,
+    sessionOptions
+  );
+
+  if (!session.isLoggedIn) {
+    return {
+      redirect: {
+        destination: `/login`,
+        permanent: false,
+      },
+    };
+  }
+
+  return { props: { session } };
+}) satisfies GetServerSideProps<{ session: SessionData }>;

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,16 +16,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
 import Container from "@/components/container";
 import Footer from "@/components/footer";
+import Layout from "@/components/layout";
 import Spinner from "@/components/spinner";
 import WhySkippa from "@/components/whyskippa";
-import $api from "@/lib/axios";
+import useSession from "@/hooks/session";
 import { splitCamelCaseText } from "@/lib/utils";
-import Layout from "@/components/layout";
-import { useMerchant } from "@/hooks/merchant";
+import $api from "@/lib/axios";
 
 type FormDataType = z.infer<typeof FormSchema>;
 
@@ -50,8 +48,9 @@ export default function LoginForm() {
     },
   });
   const { toast } = useToast();
-  const { data: session } = useSession();
-  const merchant = useMerchant({ user: session?.user || null });
+  const { signIn } = useSession();
+  const search = useSearchParams();
+  const redirectTo = search.get("callbackUrl");
 
   async function handleVerifyAccount(form: FormDataType) {
     const res = await $api({
@@ -73,35 +72,25 @@ export default function LoginForm() {
 
   async function onSubmit(formData: FormDataType) {
     try {
-      const res = await signIn("credentials", {
-        ...formData,
-        redirect: false,
-      });
-
-      console.log(res);
-
-      if (res?.error) {
-        const error = JSON.parse(res.error);
-
-        if (error.message === "Complete your signup process") {
-          toast({
-            duration: 1000 * 60,
-            variant: "destructive",
-            title: splitCamelCaseText(error.name) || undefined,
-            description: error.message || "Complete your signup process",
-          });
-          handleVerifyAccount(formData);
-          return;
-        }
+      const res = await signIn(formData);
+      form.reset();
+      router.push(`${redirectTo || "/profile"}`);
+    } catch (error: any) {
+      if (error.name === "AccountVerificationError") {
+        toast({
+          duration: 1000 * 5,
+          variant: "destructive",
+          title: splitCamelCaseText(error.name) || undefined,
+          description: error.message || "Complete your signup process",
+        });
+        handleVerifyAccount(formData);
+        return;
       }
 
-      form.reset();
-      merchant.update();
-      router.push("/profile");
-    } catch (error: any) {
       toast({
+        duration: 1000 * 5,
         variant: "destructive",
-        title: splitCamelCaseText(error.data?.name) || undefined,
+        title: splitCamelCaseText(error?.name || "Error"),
         description:
           error.data?.message ||
           error.message ||
@@ -220,7 +209,6 @@ export default function LoginForm() {
         <WhySkippa />
       </main>
       <Footer />
-      <Toaster />
     </Layout>
   );
 }
