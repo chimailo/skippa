@@ -10,11 +10,12 @@ import { useSidebarWidth } from "@/context/sidebarWidthProvider";
 import { User } from "@/types";
 
 type Props = {
-  user?: User | null;
   active?: string;
+  businessName?: string;
+  user: User;
 };
 
-export default function Sidebar({ user, active }: Props) {
+export default function Sidebar({ businessName, active, user }: Props) {
   const [isBrowser, setBrowser] = useState(false);
   const { collapsed, handleCollapsed } = useSidebarWidth();
   const params = useParams();
@@ -23,6 +24,11 @@ export default function Sidebar({ user, active }: Props) {
     setBrowser(true);
   }, []);
 
+  const sidebarItems = SIDEBARITEMS["partners"].children.filter((item) => {
+    if (item.label.toLowerCase() === "team") return user.type !== "individual";
+    return true;
+  });
+
   return (
     <aside
       className={cn(
@@ -30,8 +36,8 @@ export default function Sidebar({ user, active }: Props) {
         collapsed ? "w-14" : "w-[12.5rem]"
       )}
     >
-      <SidebarMenu collapsed={collapsed} name={user?.company}>
-        {SIDEBARITEMS["partners"].children.map((item) => (
+      <SidebarMenu collapsed={collapsed} name={businessName}>
+        {sidebarItems.map((item) => (
           <SidebarItem
             key={item.href}
             label={item.label}
@@ -39,7 +45,11 @@ export default function Sidebar({ user, active }: Props) {
             href={`/partners/${params.id}${item.href}`}
             active={active === item.label.toLowerCase()}
           >
-            {item.icon({ className: "w-5 h-5" })}
+            {item.icon({
+              className: "w-5 h-5",
+              color:
+                active === item.label.toLowerCase() ? "#FFFFFF" : "#C7C7C7",
+            })}
             {item.label}
           </SidebarItem>
         ))}

@@ -13,8 +13,10 @@ type Props = {
   sidebar?: {
     active: string;
     activeChild?: string;
+    name?: string;
   };
   title?: string;
+  noLink?: boolean;
 };
 
 export default function Layout({
@@ -23,6 +25,7 @@ export default function Layout({
   title,
   auth,
   user,
+  noLink,
 }: Props) {
   const { collapsed } = useSidebarWidth();
   const hasChild = !!sidebar?.activeChild;
@@ -34,7 +37,11 @@ export default function Layout({
           <Header auth />
           <Sidebar user={user} active={sidebar?.active} hasChild={hasChild} />
           {hasChild && (
-            <ChildSidebar user={user} active={sidebar?.activeChild} />
+            <ChildSidebar
+              user={user}
+              businessName={sidebar?.name}
+              active={sidebar?.activeChild}
+            />
           )}
           <div
             className={cn(
@@ -54,7 +61,7 @@ export default function Layout({
         </>
       ) : (
         <>
-          {auth ? <Header auth /> : <Header />}
+          {auth ? <Header auth /> : noLink ? <Header noLink /> : <Header />}
           {children}
         </>
       )}

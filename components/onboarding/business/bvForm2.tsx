@@ -429,7 +429,7 @@ export default function BusinessVerificationForm2({
         />
         <FormField
           control={form.control}
-          name="addressDetail.state"
+          name="addressDetail.country"
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>

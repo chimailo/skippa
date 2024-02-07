@@ -6,7 +6,10 @@ import UserIcon from "./user";
 import HelpIcon from "./help";
 import BusinessIcon from "./business";
 import CustomerIcon from "./customers";
-import DeliveryIcon from "./deliveries";
+import BikeIcon from "./bike";
+import TruckIcon from "./truck";
+import CarIcon from "./car";
+import VanIcon from "./van";
 
 export {
   DashboardIcon,
@@ -16,6 +19,9 @@ export {
   UserIcon,
   BusinessIcon,
   CustomerIcon,
-  DeliveryIcon,
   HelpIcon,
+  BikeIcon,
+  CarIcon,
+  TruckIcon,
+  VanIcon,
 };

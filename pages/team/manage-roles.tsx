@@ -4,27 +4,14 @@ import { useRouter } from "next/router";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getIronSession } from "iron-session";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
 import Layout from "@/components/layout";
 import CreateRole from "@/components/team/manage-roles/create";
 import { EditRole } from "@/components/team/manage-roles/edit";
-import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 import $api from "@/lib/axios";
-import { cn, splitCamelCaseText } from "@/lib/utils";
+import { splitCamelCaseText } from "@/lib/utils";
 import { sessionOptions } from "@/lib/session";
 import { Role, SessionData } from "@/types";
 import {
@@ -34,7 +21,6 @@ import {
 } from "@/components/team/manage-roles/collapsible";
 import useSession from "@/hooks/session";
 import FetchError from "@/components/error";
-import { Skeleton } from "@/components/ui/skeleton";
 import Loading from "@/components/loading";
 import RoleDetails from "@/components/team/manage-roles/details";
 
@@ -48,25 +34,7 @@ type Permissions = {
   permission: Permission[];
 };
 
-const adminRoles = [
-  "dashboard",
-  "partners",
-  "customers",
-  "reports",
-  "settlements",
-  "team",
-  "profile",
-];
-
-const businessRoles = [
-  "dashboard",
-  "reports",
-  "settlements",
-  "team",
-  "profile",
-];
-
-export default function ManagePartners({
+export default function ManageRoles({
   session,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -147,7 +115,10 @@ export default function ManagePartners({
     }
   }, [roleId, roles]);
 
-  const rolesPages = () => permissions.map((permission) => permission.name);
+  const rolesPages = () =>
+    permissions
+      .filter((permission) => permission.name !== "Orders")
+      .map((permission) => permission.name.toLowerCase());
 
   function getRolePerms(permissions?: string[]) {
     const perms: string[] = [];

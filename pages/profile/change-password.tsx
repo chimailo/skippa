@@ -120,11 +120,7 @@ export default function ForgotPasswordForm({
   }
 
   return (
-    <Layout
-      auth
-      user={session.user}
-      sidebar={{ active: "profile", activeChild: "profile" }}
-    >
+    <Layout auth user={session.user} sidebar={{ active: "profile" }}>
       <Container className="py-8">
         <div className="flex items-center gap-3 mb-12">
           <Link

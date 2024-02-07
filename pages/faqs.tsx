@@ -26,11 +26,11 @@ export default function FAQs({
       <>
         {customerFaqs.length && (
           <section className="my-12 sm:my-16">
-            <h1 className="text-xl my-8 font-bold text-primary">Customers</h1>
+            <h1 className="text-2xl my-8 font-bold text-primary">Customers</h1>
             {customerFaqs.map((faq) => (
               <Accordion key={faq.id} type="single" collapsible>
                 <AccordionItem value={"item-" + faq.id}>
-                  <AccordionTrigger className="font-medium text-base">
+                  <AccordionTrigger className="font-semibold text-lg hover:no-underline">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-base">
@@ -48,11 +48,11 @@ export default function FAQs({
         )}
         {partnerFaqs.length && (
           <section className="my-12 sm:my-16">
-            <h1 className="text-xl my-8 font-bold text-primary">Partners</h1>
+            <h1 className="text-2xl my-8 font-bold text-primary">Partners</h1>
             {partnerFaqs.map((faq) => (
               <Accordion key={faq.id} type="single" collapsible>
                 <AccordionItem value={"item-" + faq.id}>
-                  <AccordionTrigger className="font-medium text-base">
+                  <AccordionTrigger className="font-semibold text-lg hover:no-underline">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-base">

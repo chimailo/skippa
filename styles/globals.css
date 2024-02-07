@@ -4,7 +4,7 @@
 
 :root {
   --grey: 240 4.8% 95.9%;
-  --main: 174, 44%, 51%;
+  --main: 174, 52%, 17%;
 }
 /* Firefox */
 * {
@@ -14,8 +14,8 @@
 
 /* Chrome, Edge, and Safari */
 *::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 *::-webkit-scrollbar-track {

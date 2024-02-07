@@ -1,17 +1,25 @@
 import type { InferGetStaticPropsType, GetStaticProps } from "next";
 import Layout from "@/components/help/layout";
 import { getSanitizedMarkup } from "@/lib/utils";
+import NoData from "@/components/nodata";
 
 export default function FAQs({
   terms,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
-  const content = getSanitizedMarkup(terms.body);
-
   return (
     <Layout>
-      <article className="wysiwyg my-8 md:my-12">
-        <div className="" dangerouslySetInnerHTML={{ __html: content }}></div>
-      </article>
+      {terms.body ? (
+        <article className="wysiwyg my-8 md:my-12">
+          <div
+            className=""
+            dangerouslySetInnerHTML={{
+              __html: getSanitizedMarkup(terms.body),
+            }}
+          ></div>
+        </article>
+      ) : (
+        <NoData message="No content was found" />
+      )}
     </Layout>
   );
 }
@@ -21,6 +29,10 @@ export const getStaticProps = (async () => {
     `${process.env.SKIPPA_CMS_BASE_URL}/terms-and-condition`
   );
   const data = await res.json();
+
+  if (data.error) {
+    return { props: { terms: { ...data.error } } };
+  }
 
   return { props: { terms: data.data.attributes } };
 }) satisfies GetStaticProps<{

@@ -188,7 +188,7 @@ export default function CreateRole({ token, roles, fetchRoles }: Props) {
                               />
                             </FormControl>
                             <FormLabel className="capitalize font-normal">
-                              {role}
+                              {role === "businesses" ? "partners" : role}
                             </FormLabel>
                           </FormItem>
                         );

@@ -253,6 +253,7 @@ export default function ManagePartners({
       sidebar={{
         active: "partners",
         activeChild: "manage partner",
+        name: merchant?.data.companyName || "",
       }}
       title="Manage Partners"
     >

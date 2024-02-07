@@ -58,7 +58,7 @@ type Props = {
 };
 
 const uploadFiles = async (file: FormData) => {
-  return await fetch(`/api/uploads`, {
+  return await fetch(`${process.env.baseUrl}/upload/media`, {
     method: "POST",
     body: file,
   });
@@ -154,7 +154,6 @@ export default function BusinessForm({ token, data, user }: Props) {
     );
 
     const sMediaCount = Object.keys(sMedia).length;
-    console.log(sMedia);
 
     setPassport({ url: image });
     setSocialMedia(sMedia);
@@ -171,21 +170,6 @@ export default function BusinessForm({ token, data, user }: Props) {
     }
   }, [res]);
 
-  const convertBase64 = (file: File) => {
-    return new Promise<string>((resolve, reject) => {
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(file);
-
-      fileReader.onload = () => {
-        resolve(fileReader.result as string);
-      };
-
-      fileReader.onerror = (error) => {
-        reject(error);
-      };
-    });
-  };
-
   const handleImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.item(0);
 
@@ -198,39 +182,33 @@ export default function BusinessForm({ token, data, user }: Props) {
       return;
     }
 
-    const rawData = await convertBase64(file);
-
     const imgForm = new FormData();
-    imgForm.append("data", rawData);
-    imgForm.append("folder", "onboarding/business");
-    imgForm.append("filename", user.id);
-    imgForm.append("upload_preset", "onboarding-passports");
+    imgForm.append("files", file);
 
     try {
       setImageUploading(true);
       const res = await uploadFiles(imgForm);
-      const data = await res.json();
+      const { data } = await res.json();
 
-      if (!data.success) {
+      if (!res.ok) {
         toast({
           duration: 1000 * 5,
           variant: "destructive",
-          title: "Error",
+          title: data?.name || "Error",
           description:
-            data.message ||
+            data?.message ||
             "An error occured uploading your passport photo, please try again",
         });
         return;
       }
 
       const image = {
-        name: file.name,
-        size: Math.round(Number(data.bytes) / 1024) + "kb",
-        src: `/v${data.version}/${data.public_id}`,
-        url: data.secure_url,
+        name: data[0].originalName,
+        size: Math.round(Number(data[0].sizeInBytes) / 1024) + "kb",
+        url: data[0].location,
       };
+
       setPassport(image);
-      console.log(passport);
       form.setValue("directorDetail.image", image.url);
       localStorage.setItem("passport", JSON.stringify(image));
     } catch (error) {
@@ -275,7 +253,7 @@ export default function BusinessForm({ token, data, user }: Props) {
 
       const res = await $api({
         method: "post",
-        headers: { Authorization: `Bearer ${token}` },
+        token,
         url: "/merchants/business/account/verification",
         data: { ...rest, deliveryCategory: category, socialMedia: socMedia },
       });
@@ -889,10 +867,7 @@ export default function BusinessForm({ token, data, user }: Props) {
                   </FormControl>
                   <SelectContent className="max-h-80">
                     {countries.map((country: any) => (
-                      <SelectItem
-                        key={country.alpha2Code}
-                        value={country.name}
-                      >
+                      <SelectItem key={country.alpha2Code} value={country.name}>
                         {country.name}
                       </SelectItem>
                     ))}

@@ -9,7 +9,6 @@ import {
   DashboardIcon,
   HelpIcon,
   BusinessIcon,
-  DeliveryIcon,
   CustomerIcon,
   ReportIcon,
   SettlementIcon,
@@ -120,25 +119,21 @@ export default function Sidebar({ user, active, hasChild }: Props) {
   }, []);
 
   const getUserPerms = () => {
-    if (user?.type === "admin") {
-      // @ts-ignore
-      let perms: string[] = [];
-      (user.role.permissions as string[]).forEach((perm: string) => {
-        let page = perm.split(":")[0];
+    let perms: string[] = [];
+    (user!.role.permissions as string[]).forEach((p: string) => {
+      let page = p.split(":")[0].toLowerCase();
+      const perm = page === "businesses" ? "partners" : page;
 
-        if (!perms.includes(page.toLowerCase())) perms.push(page);
-      });
-      return perms;
-    }
-    return user?.role.permissions as string[];
+      if (!perms.includes(page.toLowerCase())) perms.push(perm);
+    });
+    return perms;
   };
   const isSuperAdmin =
     user?.role.slug === "business-super-admin" ||
     user?.role.slug === "individual-super-admin" ||
     user?.role.slug === "skippa-super-admin";
   const isRider = (label: string) =>
-    user?.role.slug === "business-riders" &&
-    (user.role.permissions as string[]).includes(label);
+    user?.role.slug === "business-riders" && getUserPerms().includes(label);
   const isCustom = (label: string) =>
     user?.role.isCustom && getUserPerms().includes(label);
 
@@ -236,7 +231,7 @@ export const SidebarMenu = ({
     <nav className="flex mt-14 flex-1 flex-col overflow-hidden py-4 md:py-12">
       <h2
         className={cn(
-          "font-semibold transition-opacity pr-8 pl-14 py-6 truncate text-[#C7C7C7]",
+          "font-semibold transition-opacity pr-8 pl-14 py-6 truncate text-[#C7C7C7] min-h-[4.5rem]",
           collapsed ? "opacity-0" : "opacity-100"
         )}
       >

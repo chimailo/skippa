@@ -38,7 +38,6 @@ import {
 import { cn, dobRange, validatePassport } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import Spinner from "@/components/spinner";
-import useSession from "@/hooks/session";
 
 type FormDataType = UseFormReturn<
   {
@@ -79,17 +78,10 @@ type Props = {
   form: FormDataType;
 };
 
-function passportLoader({ src, width }: { src: string; width: number }) {
-  const params = ["c_scale", "f_auto", `w_${width}`, "q_auto"];
-  return `https://res.cloudinary.com/drgtk7a9s/image/upload/${params.join(
-    ","
-  )}${src}`;
-}
-
-const uploadFiles = async (file: FormData) => {
-  return await fetch(`/api/uploads`, {
+const uploadFiles = async (form: FormData) => {
+  return await fetch(`${process.env.baseUrl}/upload/media`, {
     method: "POST",
-    body: file,
+    body: form,
   });
 };
 
@@ -98,7 +90,6 @@ export default function BusinessVerificationForm1({ form }: Props) {
   const [passport, setPassport] = useState<Record<string, string>>();
   const [passportError, setPassportError] = useState<string>();
 
-  const { session } = useSession();
   const { toast } = useToast();
   const { dateFrom, dateTo, defaultMonth } = dobRange();
 
@@ -113,21 +104,6 @@ export default function BusinessVerificationForm1({ form }: Props) {
     }
   }, []);
 
-  const convertBase64 = (file: File) => {
-    return new Promise<string>((resolve, reject) => {
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(file);
-
-      fileReader.onload = () => {
-        resolve(fileReader.result as string);
-      };
-
-      fileReader.onerror = (error) => {
-        reject(error);
-      };
-    });
-  };
-
   const handleImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.item(0);
 
@@ -140,18 +116,13 @@ export default function BusinessVerificationForm1({ form }: Props) {
       return;
     }
 
-    const rawData = await convertBase64(file);
-
     const imgForm = new FormData();
-    imgForm.append("data", rawData);
-    imgForm.append("folder", "onboarding/business");
-    imgForm.append("filename", session.user?.id!);
-    imgForm.append("upload_preset", "onboarding-passports");
+    imgForm.append("files", file);
 
     try {
       setImageUploading(true);
       const res = await uploadFiles(imgForm);
-      const data = await res.json();
+      const { data } = await res.json();
 
       if (!res.ok) {
         toast({
@@ -159,19 +130,19 @@ export default function BusinessVerificationForm1({ form }: Props) {
           duration: 1000 * 5,
           title: "Error",
           description:
+            data?.message ||
             "An error occured uploading your passport photo, please try again",
         });
         return;
       }
 
       const image = {
-        name: file.name,
-        size: Math.round(Number(data.bytes) / 1024) + "kb",
-        src: `/v${data.version}/${data.public_id}`,
-        url: data.secure_url,
+        name: data[0].originalName,
+        size: Math.round(Number(data[0].sizeInBytes) / 1024) + "kb",
+        url: data[0].location,
       };
+
       setPassport(image);
-      console.log(passport);
       form.setValue("directorDetail.image", image.url);
       localStorage.setItem("passport", JSON.stringify(image));
     } catch (error) {
@@ -383,10 +354,9 @@ export default function BusinessVerificationForm1({ form }: Props) {
                   <Avatar className="rounded-none relative">
                     <AvatarImage asChild src={passport.url}>
                       <Image
-                        loader={passportLoader}
                         width={40}
                         height={40}
-                        src={passport.src}
+                        src={passport.url}
                         alt="Director's passport"
                       />
                     </AvatarImage>

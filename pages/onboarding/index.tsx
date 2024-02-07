@@ -92,6 +92,7 @@ export default function Onboarding({
       const res = await $api({
         method: "post",
         url: "/merchants/business/account/verification",
+        token: session.token,
         data: { ...rest, deliveryCategory, directorDetail },
       });
 

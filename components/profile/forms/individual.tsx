@@ -59,14 +59,16 @@ type Props = {
 };
 
 const uploadFiles = async (file: FormData) => {
-  // const headers = new Headers({
-  //   "Content-Type": "multipart/form-data",
-  // });
-
-  return await fetch(`/api/uploads`, {
+  return await fetch(`${process.env.baseUrl}/upload/media`, {
     method: "POST",
-    // headers,
     body: file,
+  });
+};
+
+const uploadDoc = async (form: FormData) => {
+  return await fetch(`${process.env.baseUrl}/upload/document`, {
+    method: "POST",
+    body: form,
   });
 };
 
@@ -148,8 +150,6 @@ export default function IndividualForm({ token, data, user }: Props) {
 
     if (vp.length) {
       const papers = vp.map((paper: any) => {
-        // if (!paper.vehicalPaperImages) setVPaperError("Invalid image url");
-
         return {
           url: paper.vehicalPaperImages || "",
           type: paper.type,
@@ -178,21 +178,6 @@ export default function IndividualForm({ token, data, user }: Props) {
     }
   }, [res]);
 
-  const convertBase64 = (file: File) => {
-    return new Promise<string>((resolve, reject) => {
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(file);
-
-      fileReader.onload = () => {
-        resolve(fileReader.result as string);
-      };
-
-      fileReader.onerror = (error) => {
-        reject(error);
-      };
-    });
-  };
-
   const handleImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageUploading(true);
     const file = e.target.files?.item(0);
@@ -205,41 +190,33 @@ export default function IndividualForm({ token, data, user }: Props) {
         return;
       }
 
-      const data = await convertBase64(file);
       const imgForm = new FormData();
-      imgForm.append("data", data);
-      imgForm.append("folder", `onboarding/individual/passports`);
-      imgForm.append("filename", user.id);
-      imgForm.append("upload_preset", "onboarding-passports");
+      imgForm.append("files", file);
 
       try {
         const res = await uploadFiles(imgForm);
-        const data = await res.json();
+        const { data } = await res.json();
 
-        if (!data.success) {
+        if (!res.ok) {
           toast({
             duration: 1000 * 5,
             variant: "destructive",
             title: "Error",
             description:
-              data.message ||
+              data?.message ||
               "An error occured uploading your passport photo, please try again",
           });
           return;
         }
 
-        const img = {
-          name: file.name,
-          size: Math.round(Number(data.bytes) / 1024) + "kb",
-          src: `/v${data.version}/${data.public_id}`,
-          url: data.secure_url,
+        const image = {
+          name: data[0].originalName,
+          size: Math.round(Number(data[0].sizeInBytes) / 1024) + "kb",
+          url: data[0].location,
         };
 
-        setPassport(img);
-        form.setValue("image", img.url, {
-          shouldDirty: true,
-          shouldTouch: true,
-        });
+        setPassport(image);
+        form.setValue("image", image.url);
       } catch (error) {
         toast({
           duration: 1000 * 5,
@@ -272,21 +249,15 @@ export default function IndividualForm({ token, data, user }: Props) {
       return;
     }
 
-    const dataFile = await convertBase64(file);
-    const userId = user.id;
-
     const imgForm = new FormData();
-    imgForm.append("data", dataFile);
-    imgForm.append("folder", `onboarding/individual/papers/${userId}`);
-    imgForm.append("filename", btoa(file.name));
-    imgForm.append("upload_preset", "onboarding-vehicle-papers");
+    imgForm.append("files", file);
 
     try {
       setPaperUploading(true);
-      const res = await uploadFiles(imgForm);
-      const data = await res.json();
+      const res = await uploadDoc(imgForm);
+      const { data } = await res.json();
 
-      if (!data.success) {
+      if (!res.ok) {
         toast({
           duration: 1000 * 5,
           variant: "destructive",
@@ -299,22 +270,20 @@ export default function IndividualForm({ token, data, user }: Props) {
       }
 
       const paper = {
-        id: data.public_id,
-        name: file.name,
-        size: Math.round(Number(data.bytes) / 1024) + "kb",
-        src: `/v${data.version}/${data.public_id}`,
-        url: data.secure_url,
+        name: data[0].originalName,
+        size: Math.round(Number(data[0].sizeInBytes) / 1024) + "kb",
+        url: data[0].location,
+        id: data[0].assetId,
       };
 
       const papers = [...vPapers, paper];
       setVPapers(papers);
-      localStorage.setItem("vPapers", JSON.stringify(papers));
       const papersUrl = papers.map((paper) => ({
         vehicalPaperImages: paper.url,
         type: "image",
         name: paper.name,
       }));
-      form.setValue("vehiclePapers", papersUrl, { shouldValidate: true });
+      form.setValue("vehiclePapers", papersUrl);
     } catch (error) {
       toast({
         duration: 1000 * 5,
@@ -472,13 +441,13 @@ export default function IndividualForm({ token, data, user }: Props) {
                           <p className="font-medium text-gray-500 text-xs">
                             {paper?.size}
                           </p>
-                          <button
+                          {/* <button
                             className="rounded-full bg-white p-1 z-10 absolute right-0 bottom-0"
                             type="button"
                             onClick={() => removePaper(paper)}
                           >
                             <X className="w-4 h-4" />
-                          </button>
+                          </button> */}
                         </li>
                       ))}
                     </ul>

@@ -34,7 +34,7 @@ export default function RoleDetails({
             disabled
           />
           <label htmlFor={page} className="font-medium capitalize text-base">
-            {page === "Businesses" ? "partners" : page}
+            {page === "businesses" ? "partners" : page}
           </label>
         </div>
       ))}

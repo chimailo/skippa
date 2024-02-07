@@ -196,7 +196,7 @@ export const EditRole = (props: Props) => {
                               />
                             </FormControl>
                             <FormLabel className="capitalize font-normal">
-                              {page === "Businesses" ? "partners" : page}
+                              {page === "businesses" ? "partners" : page}
                             </FormLabel>
                           </FormItem>
                         );

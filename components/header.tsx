@@ -9,7 +9,13 @@ import { cn } from "@/lib/utils";
 import useSession from "@/hooks/session";
 import { useSidebarWidth } from "@/context/sidebarWidthProvider";
 
-export default function Header({ auth }: { auth?: boolean }) {
+export default function Header({
+  auth,
+  noLink,
+}: {
+  auth?: boolean;
+  noLink?: boolean;
+}) {
   const { signOut } = useSession();
   const router = useRouter();
   const { collapsed } = useSidebarWidth();
@@ -46,10 +52,21 @@ export default function Header({ auth }: { auth?: boolean }) {
           className="flex flex-shrink-0 h-14 md:h-16 bg-primary-darker z-40"
         >
           <Container className="flex items-center w-full gap-4 max-w-screen-2xl">
-            <Link href="/" className="flex items-center gap-3 text-primary">
-              <Logo />
-              <h1 className="truncate font-bold text-xl text-white">Skippa</h1>
-            </Link>
+            {noLink ? (
+              <div className="flex items-center gap-3 text-primary">
+                <Logo />
+                <h1 className="truncate font-bold text-xl text-white">
+                  Skippa
+                </h1>
+              </div>
+            ) : (
+              <Link href="/" className="flex items-center gap-3 text-primary">
+                <Logo />
+                <h1 className="truncate font-bold text-xl text-white">
+                  Skippa
+                </h1>
+              </Link>
+            )}
           </Container>
         </header>
       )}

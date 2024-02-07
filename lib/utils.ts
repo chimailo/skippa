@@ -91,3 +91,14 @@ export function getStatus() {
 
 export const getSanitizedMarkup = (content: string) =>
   DOMPurify.sanitize(marked.parse(content) as string);
+
+export const formatAmount = (
+  amount: number,
+  options?: Intl.NumberFormatOptions | undefined
+) => {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    ...options,
+  }).format(amount);
+};
