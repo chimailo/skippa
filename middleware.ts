@@ -13,6 +13,7 @@ export async function middleware(request: NextRequest, response: NextResponse) {
   if (!session.isLoggedIn) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
+  console.log(session.user);
 
   if (
     !request.nextUrl.pathname.includes("/onboarding") &&
