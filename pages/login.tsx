@@ -72,8 +72,9 @@ export default function LoginForm() {
 
   async function onSubmit(formData: FormDataType) {
     try {
-      const res = await signIn(formData);
+      await signIn(formData);
       form.reset();
+      console.log(redirectTo);
       router.push(`${redirectTo || "/profile"}`);
     } catch (error: any) {
       if (error.name === "AccountVerificationError") {
