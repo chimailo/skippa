@@ -122,7 +122,7 @@ export default function Guarantor() {
 
     if (!(id || token)) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: "Invalid Link",
         description:
@@ -142,7 +142,7 @@ export default function Guarantor() {
       router.push("/onboarding/guarantor/welcome");
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:

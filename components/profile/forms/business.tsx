@@ -73,6 +73,7 @@ export default function BusinessForm({ token, data, user }: Props) {
   const [socialMedia, setSocialMedia] = useState<Record<string, SocMedia>>({});
   const [states, setStates] = useState([]);
   const [countries, setCountries] = useState([]);
+  const [banks, setBanks] = useState([]);
 
   const business = data.business;
   const { update } = useSession();
@@ -129,7 +130,20 @@ export default function BusinessForm({ token, data, user }: Props) {
   const { data: res } = useSWR(`/options/countries`, () =>
     $api({ url: `/options/countries` })
   );
+  const { data: bnks } = useSWR(`/options/banks`, () =>
+    $api({ url: `/options/banks` })
+  );
+
   const { dateFrom, dateTo, defaultMonth } = dobRange();
+
+  useEffect(() => {
+    if (bnks) {
+      console.log(bnks);
+      const b = bnks.data;
+
+      setBanks(b);
+    }
+  }, [bnks]);
 
   useEffect(() => {
     const image = business?.contactInformation?.director.image || "";
@@ -192,7 +206,7 @@ export default function BusinessForm({ token, data, user }: Props) {
 
       if (!res.ok) {
         toast({
-          duration: 1000 * 5,
+          duration: 1000 * 4,
           variant: "destructive",
           title: data?.name || "Error",
           description:
@@ -213,7 +227,7 @@ export default function BusinessForm({ token, data, user }: Props) {
       localStorage.setItem("passport", JSON.stringify(image));
     } catch (error) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -270,7 +284,7 @@ export default function BusinessForm({ token, data, user }: Props) {
       });
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:
@@ -309,7 +323,7 @@ export default function BusinessForm({ token, data, user }: Props) {
               <FormItem className="w-full">
                 <FormLabel className="">Support Email</FormLabel>
                 <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
+                  <Input type="email" {...field} disabled={!isEditing} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -679,13 +693,28 @@ export default function BusinessForm({ token, data, user }: Props) {
             control={form.control}
             name="bankAccountDetail.bankName"
             render={({ field }) => (
-              <FormItem className="w-full space-y-0">
+              <FormItem className="w-full">
                 <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
                   Bank Name
                 </FormLabel>
-                <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
-                </FormControl>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  disabled={!isEditing}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-80">
+                    {banks.map((bank: any) => (
+                      <SelectItem key={bank.id} value={bank.name}>
+                        {bank.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -694,7 +723,7 @@ export default function BusinessForm({ token, data, user }: Props) {
             control={form.control}
             name="bankAccountDetail.accountNumber"
             render={({ field }) => (
-              <FormItem className="w-full space-y-0">
+              <FormItem className="w-full">
                 <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
                   Bank Account No.
                 </FormLabel>

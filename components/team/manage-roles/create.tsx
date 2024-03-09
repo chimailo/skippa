@@ -85,7 +85,7 @@ export default function CreateRole({ token, roles, fetchRoles }: Props) {
       });
 
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         title: splitCamelCaseText(response.name) || undefined,
         description: response.message || "Role created successfully",
@@ -96,7 +96,7 @@ export default function CreateRole({ token, roles, fetchRoles }: Props) {
       fetchRoles();
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:

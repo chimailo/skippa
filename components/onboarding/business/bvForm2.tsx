@@ -41,7 +41,7 @@ type FormDataType = UseFormReturn<
     supportEmail?: string;
     tin: string;
     registrationNumber: string;
-    deliveryCategory: [string, ...string[]];
+    deliveryCategory: string[];
     bankAccountDetail: {
       bankName: string;
       accountNumber: string;
@@ -85,10 +85,14 @@ export default function BusinessVerificationForm2({
 }: Props) {
   const [socialMediaFormCount, setSocialMediaFormCount] = useState(1);
   const [states, setStates] = useState([]);
+  const [banks, setBanks] = useState([]);
   const [countries, setCountries] = useState([]);
 
   const { data } = useSWR(`/options/countries`, () =>
     $api({ url: `/options/countries` })
+  );
+  const { data: bnks } = useSWR(`/options/banks`, () =>
+    $api({ url: `/options/banks` })
   );
 
   useEffect(() => {
@@ -100,6 +104,15 @@ export default function BusinessVerificationForm2({
       setStates(states);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (bnks) {
+      console.log(bnks);
+      const b = bnks.data;
+
+      setBanks(b);
+    }
+  }, [bnks]);
 
   const handleAddSocialMedia = () => {
     if (socialMediaFormCount === 3) return;
@@ -258,13 +271,24 @@ export default function BusinessVerificationForm2({
           control={form.control}
           name="bankAccountDetail.bankName"
           render={({ field }) => (
-            <FormItem className="w-full space-y-0">
+            <FormItem className="w-full">
               <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
                 Bank Name
               </FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="max-h-80">
+                  {banks.map((bank: any) => (
+                    <SelectItem key={bank.id} value={bank.name}>
+                      {bank.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -273,8 +297,8 @@ export default function BusinessVerificationForm2({
           control={form.control}
           name="bankAccountDetail.accountNumber"
           render={({ field }) => (
-            <FormItem className="w-full space-y-0">
-              <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
+            <FormItem className="w-full">
+              <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
                 Bank Accont No.
               </FormLabel>
               <FormControl>

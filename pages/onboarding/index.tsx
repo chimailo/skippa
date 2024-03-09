@@ -40,6 +40,8 @@ export default function Onboarding({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [page, setPage] = useState(1);
   const [socialMedia, setSocialMedia] = useState<Record<string, SocMedia>>({});
+  const [passport, setPassport] = useState<Record<string, string>>({});
+  const [vPapers, setVPapers] = useState<Record<string, string>[]>([]);
 
   const router = useRouter();
   const { update } = useSession();
@@ -50,12 +52,12 @@ export default function Onboarding({
   const bvForm = useForm<BVFormData>({
     resolver: zodResolver(BVFormSchema),
     defaultValues: bVinitialValues,
-    mode: "onBlur",
+    mode: "all",
   });
   const ivForm = useForm<IVFormData>({
     resolver: zodResolver(IVFormSchema),
     defaultValues: iVInitialValues,
-    mode: "onBlur",
+    mode: "all",
   });
 
   const form = isIndividual ? ivForm : bvForm;
@@ -97,14 +99,12 @@ export default function Onboarding({
       });
 
       form.reset();
-      localStorage.removeItem("passport");
-
       const { status, verificationChecks } = res.data;
       update({ status, verificationCount: verificationChecks });
       router.push("/onboarding/welcome");
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name || "") || undefined,
         description:
@@ -128,19 +128,17 @@ export default function Onboarding({
 
       const res = await $api({
         method: "post",
+        token: session.token,
         url: "/merchants/individual/account/verification",
         data: { ...rest, deliveryCategory: category },
       });
 
-      localStorage.removeItem("passport");
-      localStorage.removeItem("vPapers");
-
-      const { status, verificationChecks } = res.data;
+      const { status, verificationChecks } = res.data.business;
       update({ status, verificationCount: verificationChecks });
       router.push("/onboarding/welcome");
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:
@@ -166,11 +164,13 @@ export default function Onboarding({
                 className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
               >
                 {page === 1 ? (
-                  // @ts-expect-error
-                  <BusinessVerificationForm1 form={bvForm} />
+                  <BusinessVerificationForm1
+                    form={bvForm}
+                    passport={passport}
+                    setPassport={setPassport}
+                  />
                 ) : (
                   <BusinessVerificationForm2
-                    // @ts-expect-error
                     form={bvForm}
                     setSocMedia={setSocialMedia}
                     socMedia={socialMedia}
@@ -231,10 +231,14 @@ export default function Onboarding({
                 className="space-y-6 md:space-y-8 md:px-8 lg:px-12"
               >
                 {page === 1 ? (
-                  // @ts-expect-error
-                  <IndividualVerificationForm1 form={ivForm} />
+                  <IndividualVerificationForm1
+                    form={ivForm}
+                    passport={passport}
+                    vPapers={vPapers}
+                    setPassport={setPassport}
+                    setVPapers={setVPapers}
+                  />
                 ) : (
-                  // @ts-expect-error
                   <IndividualVerificationForm2 form={ivForm} />
                 )}
                 <div className="my-4 flex justify-between items-center flex-row-reverse">

@@ -30,13 +30,13 @@ type FormData = UseFormReturn<
       firstName: string;
       email: string;
     };
-    deliveryCategory: [string, ...string[]];
+    deliveryCategory: string[];
     bankAccountDetail: {
       bankName: string;
       accountNumber: string;
     };
     vehiclePapers: Array<{
-      vehicalPaperImages: string;
+      vehiclePaperImages: string;
       type: string;
       name: string;
     }>;

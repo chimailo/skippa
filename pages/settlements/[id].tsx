@@ -29,7 +29,7 @@ import {
 import useSession from "@/hooks/session";
 import { SessionData } from "@/types";
 
-export default function Reports({
+export default function Settlement({
   session,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [order, setOrder] = useState<{ [key: string]: any }>();
@@ -41,33 +41,33 @@ export default function Reports({
   const { toast } = useToast();
   const { signOut } = useSession();
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        setLoading(true);
-        const response = await $api({
-          token: session.token,
-          url: `/orders/${params.id}?type=${session.user?.type}`,
-        });
-        setOrder(response.data);
-      } catch (error: any) {
-        if (error.data?.name === "UnauthorizedError") {
-          signOut();
-          toast({
-            variant: "destructive",
-            title: splitCamelCaseText(error.data?.name) || undefined,
-            description: error.data?.message || "Your session has expired",
-          });
-          router.push(`/login?callbackUrl=/reports/${params.id}`);
-          return;
-        }
-        setError(error.data?.message || "Failed to fetch order");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrder();
-  }, []);
+  // useEffect(() => {
+  //   const fetchOrder = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const response = await $api({
+  //         token: session.token,
+  //         url: `/orders/${params.id}?type=${session.user?.type}`,
+  //       });
+  //       setOrder(response.data);
+  //     } catch (error: any) {
+  //       if (error.data?.name === "UnauthorizedError") {
+  //         signOut();
+  //         toast({
+  //           variant: "destructive",
+  //           title: splitCamelCaseText(error.data?.name) || undefined,
+  //           description: error.data?.message || "Your session has expired",
+  //         });
+  //         router.push(`/login?callbackUrl=/reports/${params.id}`);
+  //         return;
+  //       }
+  //       setError(error.data?.message || "Failed to fetch order");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchOrder();
+  // }, []);
 
   const totalCost =
     Number(order?.priceEstimate) +
@@ -175,10 +175,7 @@ export default function Reports({
                 <p className="font-semibold">
                   Reason for Delay:
                   <span className="ml-1 font-normal">
-                    {
-                      order?.reasonForDelay[order?.reasonForDelay.length - 1]
-                        .reason
-                    }
+                    {order?.reasonForDelay[order?.reasonForDelay.length - 1]}
                   </span>
                 </p>
               )}

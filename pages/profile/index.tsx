@@ -29,13 +29,14 @@ export default function Profile({
     {
       onSuccess(data) {
         const status = data.data.business.status;
-        update({ ...session.user, status });
+        const role = data.data.role;
+        update({ ...session.user, status, role });
       },
       onError(err) {
         if (err.data.name === "UnauthorizedError") {
           signOut();
           toast({
-            duration: 1000 * 5,
+            duration: 1000 * 4,
             variant: "destructive",
             title: splitCamelCaseText(error.name) || undefined,
             description:

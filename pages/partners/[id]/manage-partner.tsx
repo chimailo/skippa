@@ -41,6 +41,7 @@ import { sessionOptions } from "@/lib/session";
 import { SessionData } from "@/types";
 import { splitCamelCaseText } from "@/lib/utils";
 import useSession from "@/hooks/session";
+import useUser from "@/hooks/user";
 
 const RejectFormSchema = z.object({
   reasonsForDecline: z.string().min(4, {
@@ -79,7 +80,7 @@ export default function ManagePartners({
         if (err.data.name === "UnauthorizedError") {
           signOut();
           toast({
-            duration: 1000 * 5,
+            duration: 1000 * 4,
             variant: "destructive",
             title: splitCamelCaseText(error.data.name) || undefined,
             description: error.data.message || "Your session has expired",
@@ -90,6 +91,8 @@ export default function ManagePartners({
       },
     }
   );
+
+  useUser();
 
   const declineForm = useForm<z.infer<typeof RejectFormSchema>>({
     resolver: zodResolver(RejectFormSchema),
@@ -122,7 +125,7 @@ export default function ManagePartners({
       declineForm.reset();
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description:
@@ -152,7 +155,7 @@ export default function ManagePartners({
       });
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.name) || undefined,
         description:
@@ -189,7 +192,7 @@ export default function ManagePartners({
       suspendForm.reset();
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description:
@@ -221,7 +224,7 @@ export default function ManagePartners({
       suspendForm.reset;
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description:

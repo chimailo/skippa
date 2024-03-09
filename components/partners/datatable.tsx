@@ -49,13 +49,13 @@ export default function DataTable({ merchants, serialNo }: Props) {
             Status
           </TableHead>
           <TableHead className="text-center whitespace-nowrap h-[3.75rem] text-white font-bold">
-            Contact Name
+            Name
           </TableHead>
           <TableHead className="text-center whitespace-nowrap h-[3.75rem] text-white font-bold">
-            Contact Phone No.
+            Phone No.
           </TableHead>
           <TableHead className="text-center whitespace-nowrap h-[3.75rem] text-white font-bold">
-            Contact Email
+            Email
           </TableHead>
           <TableHead className="text-center whitespace-nowrap h-[3.75rem] text-white font-bold">
             Date Created

@@ -22,6 +22,7 @@ import InviteUser from "@/components/team/invite-user";
 import FetchError from "@/components/error";
 import TableSkeleton from "@/components/loading/table";
 import NoData from "@/components/nodata";
+import useUser from "@/hooks/user";
 
 const endpoint = `/merchants/users`;
 
@@ -56,7 +57,7 @@ export default function Team({
       if (error?.data.name === "UnauthorizedError") {
         signOut();
         toast({
-          duration: 1000 * 5,
+          duration: 1000 * 4,
           variant: "destructive",
           title: splitCamelCaseText(error.data.name) || undefined,
           description: error.data.message || "Your session has expired",
@@ -70,6 +71,16 @@ export default function Team({
     }
   };
 
+  const noDataMessage = () => {
+    const filters = getFilters();
+    const hasFilters = Object.keys(filters).length > 0;
+    const filtersMsg =
+      "Looks like we couldn't find any matches for your search";
+    return hasFilters || search
+      ? filtersMsg
+      : "There is currently nobody in your team";
+  };
+
   useEffect(() => {
     const search = window.location.search;
     const fetchRoles = async () => {
@@ -81,7 +92,7 @@ export default function Team({
         setRoles(response.data);
       } catch (error: any) {
         toast({
-          duration: 1000 * 5,
+          duration: 1000 * 4,
           variant: "destructive",
           title: splitCamelCaseText(error.data.name) || undefined,
           description: error.data.message || "Failed to fetch roles",
@@ -90,6 +101,8 @@ export default function Team({
     };
     (() => fetchTeam(search).then(() => fetchRoles()))();
   }, []);
+
+  useUser();
 
   const getFilters = () => {
     const filter: Record<string, string> = {};
@@ -157,7 +170,7 @@ export default function Team({
       setData(response.data, filtersApplied);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to apply filters",
@@ -191,7 +204,7 @@ export default function Team({
       setData(response.data, params);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch the previous page",
@@ -222,7 +235,7 @@ export default function Team({
       setData(response.data, params);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch the next page",
@@ -299,7 +312,7 @@ export default function Team({
                 )}
               </>
             ) : (
-              <NoData message="There is currently nobody in your team" />
+              <NoData message={noDataMessage()} />
             )}
           </>
         </div>

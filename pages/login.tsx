@@ -78,7 +78,7 @@ export default function LoginForm() {
     } catch (error: any) {
       if (error.name === "AccountVerificationError") {
         toast({
-          duration: 1000 * 5,
+          duration: 1000 * 4,
           variant: "destructive",
           title: splitCamelCaseText(error.name) || undefined,
           description: error.message || "Complete your signup process",
@@ -88,7 +88,7 @@ export default function LoginForm() {
       }
 
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error?.name || "Error"),
         description:

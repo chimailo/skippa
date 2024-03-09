@@ -90,7 +90,7 @@ export default function DataTable({
         data: { email },
       });
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         title: splitCamelCaseText(response.data.name) || undefined,
         description:
@@ -98,7 +98,7 @@ export default function DataTable({
       });
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to reinvite user",
@@ -115,13 +115,13 @@ export default function DataTable({
       });
       fetchTeam(search);
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         description: response.data.message || "User deactivated successfully",
       });
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description: error.data?.message || "Failed to deactivated user",
@@ -138,13 +138,13 @@ export default function DataTable({
       });
       fetchTeam(search);
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         description: response.data?.message || "User reactivated successfully",
       });
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description: error.data?.message || "Failed to reactivate user",
@@ -217,7 +217,10 @@ export default function DataTable({
               >
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="">
+                    <Button
+                      variant="ghost"
+                      className="rounded-full bg-primary h-8 w-8 p-0 text-white hover:bg-teal-600 hover:text-white"
+                    >
                       <MoreHorizontal className="w-5" />
                     </Button>
                   </DropdownMenuTrigger>

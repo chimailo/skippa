@@ -59,7 +59,7 @@ export default function ChangeRole(props: Props) {
         data: formData,
       });
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         title: splitCamelCaseText(response.name) || undefined,
         description: response.message || "User role changed successfully",
@@ -70,7 +70,7 @@ export default function ChangeRole(props: Props) {
       handleClose();
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.name) || undefined,
         description:

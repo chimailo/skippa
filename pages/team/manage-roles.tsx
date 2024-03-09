@@ -23,6 +23,7 @@ import useSession from "@/hooks/session";
 import FetchError from "@/components/error";
 import Loading from "@/components/loading";
 import RoleDetails from "@/components/team/manage-roles/details";
+import useUser from "@/hooks/user";
 
 type Permission = {
   name: string;
@@ -65,7 +66,7 @@ export default function ManageRoles({
       if (error?.data.name === "UnauthorizedError") {
         signOut();
         toast({
-          duration: 1000 * 5,
+          duration: 1000 * 4,
           variant: "destructive",
           title: splitCamelCaseText(error.data.name) || undefined,
           description: error.data.message || "Your session has expired",
@@ -75,7 +76,7 @@ export default function ManageRoles({
       }
 
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch roles",
@@ -95,7 +96,7 @@ export default function ManageRoles({
       setPermissions(response.data);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch permissions",
@@ -115,10 +116,21 @@ export default function ManageRoles({
     }
   }, [roleId, roles]);
 
-  const rolesPages = () =>
-    permissions
-      .filter((permission) => permission.name !== "Orders")
-      .map((permission) => permission.name.toLowerCase());
+  useUser();
+
+  const rolesPages = () => {
+    let allowedPermissions: string[] = [];
+
+    for (const permission of permissions) {
+      if (["Orders", "Payments"].includes(permission.name)) continue;
+
+      if (session.user?.type === "business" && permission.name === "Customers")
+        continue;
+
+      allowedPermissions.push(permission.name.toLowerCase());
+    }
+    return allowedPermissions;
+  };
 
   function getRolePerms(permissions?: string[]) {
     const perms: string[] = [];
@@ -139,7 +151,7 @@ export default function ManageRoles({
         token: session.token,
       });
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         title: splitCamelCaseText(response.data.name) || undefined,
         description: response.data.message || "Role deleted successfully",
@@ -147,7 +159,7 @@ export default function ManageRoles({
       await fetchRoles();
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to delete role",

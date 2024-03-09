@@ -80,7 +80,7 @@ export default function GuarantorForm({ token, data, user }: Props) {
       form.reset();
       setEditing(false);
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:

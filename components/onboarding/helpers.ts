@@ -25,8 +25,8 @@ export const iVInitialValues = {
     accountNumber: "",
   },
   deliveryCategory: [],
-  image: "",
-  vehiclePapers: [],
+  image: undefined,
+  vehiclePapers: undefined,
 };
 
 export const bVinitialValues = {
@@ -45,7 +45,7 @@ export const bVinitialValues = {
     firstName: "",
     lastName: "",
     dateOfBirth: undefined,
-    image: "",
+    image: undefined,
   },
   addressDetail: {
     flatNumber: "",
@@ -65,7 +65,7 @@ export const BVFormSchema = z.object({
     .string()
     .min(1, "Billing Email is required")
     .email({ message: "Invalid email" }),
-  supportEmail: z.string().email({ message: "Invalid email" }).optional(),
+  supportEmail: z.string().optional(), //.email({ message: "Invalid email" }),
   tin: z
     .string()
     .min(1, "Tax Identification Number is required")
@@ -80,7 +80,9 @@ export const BVFormSchema = z.object({
     .min(1, "You have to select at least one item."),
   bankAccountDetail: z.object({
     bankName: z.string(),
-    accountNumber: z.string(),
+    accountNumber: z
+      .string()
+      .length(10, { message: "Account number must be exactly 10 digits" }),
   }),
   directorDetail: z.object({
     idNumber: z.string().min(1, "The director's ID number is required"),
@@ -144,7 +146,7 @@ export const IVFormSchema = z.object({
   image: z.string(),
   vehiclePapers: z
     .object({
-      vehicalPaperImages: z.string().url(),
+      vehiclePaperImages: z.string().url(),
       type: z.string(),
       name: z.string(),
     })
@@ -169,7 +171,9 @@ export const IVFormSchema = z.object({
     .min(1, "You have to select at least one item."),
   bankAccountDetail: z.object({
     bankName: z.string(),
-    accountNumber: z.string(),
+    accountNumber: z
+      .string()
+      .length(10, { message: "Account number must be exactly 10 digits" }),
   }),
 });
 
@@ -188,7 +192,7 @@ export const IProfileFormSchema = z.object({
   image: z.string(),
   vehiclePapers: z
     .object({
-      vehicalPaperImages: z.string().url(),
+      vehiclePaperImages: z.string().url(),
       type: z.string(),
       name: z.string(),
     })
@@ -213,7 +217,9 @@ export const IProfileFormSchema = z.object({
     .min(1, "You have to select at least one item."),
   bankAccountDetail: z.object({
     bankName: z.string(),
-    accountNumber: z.string(),
+    accountNumber: z
+      .string()
+      .length(10, { message: "Account number must be exactly 10 digits" }),
   }),
 });
 

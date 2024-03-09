@@ -15,6 +15,7 @@ type Props = {
     activeChild?: string;
     name?: string;
   };
+  customChild?: boolean;
   title?: string;
   noLink?: boolean;
 };
@@ -26,6 +27,7 @@ export default function Layout({
   auth,
   user,
   noLink,
+  customChild,
 }: Props) {
   const { collapsed } = useSidebarWidth();
   const hasChild = !!sidebar?.activeChild;
@@ -50,13 +52,17 @@ export default function Layout({
             )}
           >
             {title && <h1 className="font-bold text-xl mb-4">{title}</h1>}
-            <main
-              className={cn(
-                "overflow-y-auto z-10 rounded-lg bg-white min-h-[calc(100vh_-_6rem)]"
-              )}
-            >
-              {children}
-            </main>
+            {customChild ? (
+              children
+            ) : (
+              <main
+                className={cn(
+                  "overflow-y-auto z-10 rounded-lg bg-white min-h-[calc(100vh_-_6rem)]"
+                )}
+              >
+                {children}
+              </main>
+            )}
           </div>
         </>
       ) : (

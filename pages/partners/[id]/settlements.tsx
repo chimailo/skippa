@@ -3,29 +3,38 @@ import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getIronSession } from "iron-session";
 
-import DataTable from "@/components/partners/datatable";
-import Filter from "@/components/partners/filter";
+import DataTable from "@/components/settlements/datatable";
+import Filter from "@/components/settlements/filter";
 import Layout from "@/components/layout";
-import Pagination, { TPagination } from "@/components/pagination";
 import Search from "@/components/search";
 import TableSkeleton from "@/components/loading/table";
 import FetchError from "@/components/error";
-import NoData from "@/components/nodata";
+import Pagination, { TPagination } from "@/components/pagination";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 import { sessionOptions } from "@/lib/session";
 import $api from "@/lib/axios";
-import { splitCamelCaseText } from "@/lib/utils";
-import useSession from "@/hooks/session";
 import { SessionData } from "@/types";
+import { cn, splitCamelCaseText } from "@/lib/utils";
+import useSession from "@/hooks/session";
+import NoData from "@/components/nodata";
 import useUser from "@/hooks/user";
+import CashflowCard from "@/components/settlements/cashflowCard";
+import RadioButton from "@/components/radioButton";
 
-const endpoint = `/merchants`;
+type ViewType = "settlement" | "order";
 
-export default function Partners({
+const endpoint = `/settlements`;
+
+export default function Settlements({
   session,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [merchants, setMerchants] = useState<{ [key: string]: any }[]>([]);
+  const searchParams = useSearchParams();
+  const active = searchParams.get("view") as ViewType;
+
+  const [view, setView] = useState<ViewType>(active || "settlement");
+  const [orders, setOrders] = useState<{ [key: string]: any }[]>([]);
+  const [settlements, setSettlements] = useState<{ [key: string]: any }[]>([]);
   const [pagination, setPagination] = useState<TPagination>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error>();
@@ -36,48 +45,50 @@ export default function Partners({
 
   const router = useRouter();
   const { toast } = useToast();
-  const searchParams = useSearchParams();
   const { signOut } = useSession();
 
-  useEffect(() => {
-    const search = window.location.search;
-    const fetchMerchants = async () => {
-      try {
-        setLoading(true);
-        const response = await $api({
-          token: session.token,
-          url: endpoint + search,
-        });
-        setMerchants(response.data.docs);
-        setPagination(response.data.pagination);
-      } catch (error: any) {
-        if (error.data.name === "UnauthorizedError") {
-          signOut();
-          toast({
-            duration: 1000 * 4,
-            variant: "destructive",
-            title: splitCamelCaseText(error.data.name) || undefined,
-            description: error.data.message || "Your session has expired",
-          });
-          router.push(`/login?callbackUrl=/partners?${search}`);
-          return;
-        }
-        setError(error.data.message || "Failed to fetch partners");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMerchants();
-  }, []);
+  // useEffect(() => {
+  //   const search = window.location.search;
+  //   const fetchActiveView = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const response = await $api({
+  //         token: session.token,
+  //         url: endpoint + search,
+  //       });
 
-  useUser();
+  //       view === "order"
+  //         ? setOrders(response.data.docs)
+  //         : setSettlements(response.data.docs);
+  //       setPagination(response.data.pagination);
+  //     } catch (error: any) {
+  //       if (error.data.name === "UnauthorizedError") {
+  //         signOut();
+  //         toast({
+  //           variant: "destructive",
+  //           title: splitCamelCaseText(error.data.name) || undefined,
+  //           description: error.data.message || "Your session has expired",
+  //         });
+  //         router.push(`/login?callbackUrl=/settlements?${search}`);
+  //         return;
+  //       }
+  //       setError(error.data.message || "Failed to fetch transactions");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchActiveView();
+  // }, [view]);
+
+  // useUser();
 
   const getFilters = () => {
     const filter: Record<string, string> = {};
     const end_date = searchParams.get("end_date");
     const start_date = searchParams.get("start_date");
-    const status = searchParams.get("status");
+    const paymentMethod = searchParams.get("paymentMethod");
     const type = searchParams.get("type");
+    const status = searchParams.get("status");
     const name = searchParams.get("name");
 
     if (start_date) filter.start_date = start_date;
@@ -85,6 +96,7 @@ export default function Partners({
     if (status) filter.status = status;
     if (type) filter.type = type;
     if (name) filter.name = name;
+    if (paymentMethod) filter.paymentMethod = paymentMethod;
     return filter;
   };
 
@@ -96,16 +108,16 @@ export default function Partners({
     params: { [key: string]: string }
   ) {
     const query = setParams(params);
-    setMerchants(data.docs);
+    view === "order" ? setOrders(data.docs) : setSettlements(data.docs);
     setPagination(data.pagination);
-    router.push(`/partners?${query}`);
+    router.push(`/settlements?view=${view}&${query}`);
   }
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
 
-  async function searchPartners() {
+  async function searchSettlements() {
     try {
       setSearching(true);
       const response = await $api({
@@ -117,7 +129,7 @@ export default function Partners({
     } catch (error: any) {
       setError(
         error.data.message ||
-          `No partner was found that match the search term '${search}'`
+          `No transaction reference match the search term '${search}'`
       );
     } finally {
       setSearching(false);
@@ -142,7 +154,6 @@ export default function Partners({
       setData(response.data, filtersApplied);
     } catch (error: any) {
       toast({
-        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to apply filters",
@@ -176,7 +187,6 @@ export default function Partners({
       setData(response.data, params);
     } catch (error: any) {
       toast({
-        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch previous page",
@@ -207,7 +217,6 @@ export default function Partners({
       setData(response.data, params);
     } catch (error: any) {
       toast({
-        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch the next page",
@@ -227,53 +236,114 @@ export default function Partners({
     const hasFilters = Object.keys(filters).length > 0;
     const filtersMsg =
       "Looks like we couldn't find any matches for your search";
-    return hasFilters || search ? filtersMsg : "There is currently no partner";
+    return hasFilters || search ? filtersMsg : "There are no transactions yet";
   };
 
   return (
     <Layout
       auth
+      customChild
       user={session.user}
-      title="Partners"
-      sidebar={{ active: "partners" }}
+      title="Settlement"
+      sidebar={{ active: "partners", activeChild: "settlements" }}
     >
       {loading ? (
         <TableSkeleton />
       ) : error ? (
-        <FetchError message="Failed to fetch partners" />
+        <FetchError message="Failed to fetch settlements" />
       ) : (
-        <div className="block space-y-3 py-3">
-          <Search
-            placeholder="Search Partners"
-            searching={searching}
-            handleSearch={handleSearch}
-            searchRecords={searchPartners}
-          />
-          <hr className="bg-slate-100" />
-          <div className="flex justify-end px-5">
-            <Filter fetching={filtering} handleFilter={handleFilter} />
+        <>
+          <div className="grid grid-cols-3 max-w-lg gap-7 my-4">
+            {Array.from({ length: 3 }, (_, index) => (
+              <CashflowCard
+                key={index}
+                title={"Inflow"}
+                amount={15000}
+                arrow={"up"}
+              ></CashflowCard>
+            ))}
           </div>
-          <>
-            {merchants.length ? (
-              <>
-                <DataTable
-                  merchants={merchants}
-                  serialNo={pagination!.serialNo as string}
-                />
-                {pagination && (
-                  <Pagination
-                    fetching={fetching}
-                    pagination={pagination}
-                    handleNextClick={handleNextClick}
-                    handlePrevClick={handlePrevClick}
-                  />
-                )}
-              </>
-            ) : (
-              <NoData message={noDataMessage()} />
+          <div className="flex items-center gap-7 my-7">
+            <RadioButton
+              name="order"
+              view={view}
+              handleChange={() => setView("order")}
+            ></RadioButton>
+            <RadioButton
+              name="settlement"
+              view={view}
+              handleChange={() => setView("settlement")}
+            ></RadioButton>
+          </div>
+          <main
+            className={cn(
+              "overflow-y-auto z-10 rounded-lg bg-white min-h-[calc(100vh_-_6rem)]"
             )}
-          </>
-        </div>
+          >
+            <div className="block space-y-3 py-3">
+              <h1 className="text-xs font-semibold px-3">
+                Transactions History
+              </h1>
+              <Search
+                placeholder="Search Transaction Reference"
+                searching={searching}
+                handleSearch={handleSearch}
+                searchRecords={searchSettlements}
+              />
+              <hr className="bg-slate-100" />
+              <div className="flex justify-end px-5">
+                <Filter
+                  view={view}
+                  fetching={filtering}
+                  handleFilter={handleFilter}
+                />
+              </div>
+              {view === "order" && orders.length ? (
+                <>
+                  <DataTable
+                    transactions={orders}
+                    view={view}
+                    serialNo={
+                      (Number(pagination?.currentPage || 0) - 1) *
+                        Number(pagination?.perPage || 0) +
+                      1
+                    }
+                  />
+                  {pagination && (
+                    <Pagination
+                      fetching={fetching}
+                      pagination={pagination}
+                      handleNextClick={handleNextClick}
+                      handlePrevClick={handlePrevClick}
+                    />
+                  )}
+                </>
+              ) : view === "settlement" && settlements.length ? (
+                <>
+                  <DataTable
+                    transactions={settlements}
+                    view={view}
+                    serialNo={
+                      (Number(pagination?.currentPage || 0) - 1) *
+                        Number(pagination?.perPage || 0) +
+                      1
+                    }
+                  />
+                  {pagination && (
+                    <Pagination
+                      fetching={fetching}
+                      pagination={pagination}
+                      handleNextClick={handleNextClick}
+                      handlePrevClick={handlePrevClick}
+                    />
+                  )}
+                </>
+              ) : (
+                <NoData message={noDataMessage()} />
+              )}
+            </div>
+          </main>
+        </>
       )}
     </Layout>
   );
@@ -286,7 +356,7 @@ export const getServerSideProps = (async (context) => {
     sessionOptions
   );
 
-  if (!session.isLoggedIn || session.user?.type !== "admin") {
+  if (!session.isLoggedIn) {
     return {
       redirect: {
         destination: `/login`,

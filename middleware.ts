@@ -9,7 +9,6 @@ export async function middleware(request: NextRequest, response: NextResponse) {
     response,
     sessionOptions
   );
-  console.log("middleware: ", session);
 
   if (!session.isLoggedIn) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -33,13 +32,28 @@ export async function middleware(request: NextRequest, response: NextResponse) {
   }
   // Prevent business from accessing the `/profile/guarantor` pages
   if (
-    session.user?.type === "business" &&
+    (session.user?.type === "business" || session.user?.type === "admin") &&
     request.nextUrl.pathname === "/profile/guarantor"
   ) {
     return NextResponse.redirect(new URL("/profile", request.url));
   }
+
+  // Prevent user who is not activated or an admin from
+  // accessing any other pages apart from /help and /profile
+  // if (session.user?.type !== "admin" || session.user?.status !== 'activated') {
+  //   return NextResponse.redirect(new URL("/profile", request.url));
+  // }
 }
 
 export const config = {
-  matcher: ["/onboarding", "/profile/:path*", "/partners/:path*"],
+  matcher: [
+    "/onboarding",
+    "/profile/:path*",
+    "/partners/:path*",
+    "/team",
+    "/team/manage-roles",
+    "/customers",
+    "/reports/:path*",
+    "/settlements/:path*",
+  ],
 };

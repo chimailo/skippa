@@ -17,11 +17,12 @@ export default function Welcome() {
             placeholder="blur"
           />
         </div>
-        <h1 className="text-3xl font-bold">Thank You</h1>
+        <h1 className="text-3xl font-bold">Welcome</h1>
         <p className="text-lg md:text-2xl font-medium text-center">
-          Your information has been received and we are currently verifying your
-          details. You will be notified once the verification process is
-          complete.
+          You are officially part of the{" "}
+          <span className="text-primary">Skippa</span> family! To maintain a
+          safe and trustworthy environment, we kindly request you to complete
+          our verification form.
         </p>
         <div className="max-w-xs w-full">
           <Button
@@ -29,7 +30,7 @@ export default function Welcome() {
             size="lg"
             asChild
           >
-            <Link href="/profile">Continue</Link>
+            <Link href="/onboarding">Continue</Link>
           </Button>
         </div>
       </Container>

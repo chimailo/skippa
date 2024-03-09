@@ -1,165 +1,114 @@
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Footer from "@/components/footer";
-import Layout from "@/components/layout";
-import Spinner from "@/components/spinner";
 import WhySkippa from "@/components/whyskippa";
-
-const TYPES = ["business", "individual"] as const;
-
-const FormSchema = z.object({
-  type: z.enum(TYPES, {
-    required_error: "You need to select the type of the business.",
-  }),
-});
+import Logo from "@/components/svg/logo";
+import RadioButton from "@/components/radioButton";
+import { Drawer } from "@/components/drawer";
 
 export default function BusinessTypeForm() {
-  const router = useRouter();
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
-    defaultValues: { type: "business" },
-    mode: "onSubmit",
-  });
-
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    router.push(`/signup?type=${data.type}`);
-    form.reset();
-  }
+  const [view, setView] = useState("customers");
 
   return (
-    <Layout>
+    <div className="pt-10">
+      <header
+        role="banner"
+        className="flex flex-shrink-0 h-14 md:h-16 z-40 sticky top-0 bg-white"
+      >
+        <Container className="flex items-center w-full gap-4 max-w-screen-xl justify-between">
+          <div className="flex items-center gap-3 text-primary">
+            <Logo className="w-10 h-10" />
+            <h1 className="truncate font-bold text-3xl text-[#272E2D]">
+              Skippa
+            </h1>
+          </div>
+          <nav className="lg:flex items-center gap-7 text-[#272E2D] hidden">
+            <Link href="/faqs" className="text-lg font-semibold leading-none">
+              FAQs
+            </Link>
+            <Link href="/about" className="text-lg font-semibold leading-none">
+              About Us
+            </Link>
+            <Link href="/terms" className="text-lg font-semibold leading-none">
+              Terms & Conditions
+            </Link>
+          </nav>
+          <div className="lg:flex items-center gap-6 hidden">
+            <Button
+              asChild
+              variant="ghost"
+              className="text-primary font-bold gap-2 hover:text-primary"
+            >
+              <Link href="/login">Log In</Link>
+            </Button>
+            <Button asChild className="font-bold gap-2 hover:bg-teal-600">
+              <Link href="/select-business-type">Sign Up as a Partner</Link>
+            </Button>
+          </div>
+          <Drawer></Drawer>
+        </Container>
+      </header>
       <main className="flex flex-col items-center justify-between">
+        <div className="flex items-center gap-5 my-14">
+          <RadioButton
+            name="customers"
+            view={view}
+            className="rounded-xl"
+            handleChange={() => setView("customers")}
+          ></RadioButton>
+          <RadioButton
+            name="riders"
+            view={view}
+            className="rounded-xl"
+            handleChange={() => setView("riders")}
+          ></RadioButton>
+        </div>
         <Container
           compact
-          className="grid md:grid-flow-col md:auto-cols-fr md:gap-6 gap-12 my-12"
+          className="grid md:grid-flow-col md:auto-cols-fr md:gap-6 gap-12 mb-28 lg:mb-56"
         >
-          <div className="md:my-40 sm:w-4/5 md:w-full xl:w-4/5">
+          <div className="sm:w-4/5 md:w-full xl:w-4/5">
             <h1 className="text-3xl mb-4 md:mb-6 font-bold">
               Introducing <span className="text-primary">Skippa:</span>{" "}
-              Revolutionizing Logistics for Your Company!
+              Revolutionizing Logistics!
             </h1>
-            <p className="text-sm">
-              Are you a logistics company looking to elevate your services and
-              provide an exceptional customer experience? Look no further!
-              Skippa is here to transform the way you deliver packages and
-              streamline your operations.
-            </p>
+            {view === "customers" && (
+              <p className="text-sm">
+                Transform your delivery experience with Skippa! Say goodbye to
+                waiting and inefficiencies, and hello to seamless, streamlined
+                operations. Join us today to revolutionize how you receive your
+                deliveries!
+              </p>
+            )}
+            {view === "riders" && (
+              <p className="text-sm">
+                Transform your delivery experience with Skippa! Say goodbye to
+                idle time and hello to a world of opportunities. Partner with us
+                today and make every trip count!
+              </p>
+            )}
           </div>
-          <div className="shadow-3xl rounded-lg py-6 px-5 sm:px-8 md:py-8 xl:px-12">
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <h1 className="text-2xl font-bold">Business Type Selection</h1>
-                <p className="text-sm">
-                  Please select the business type that best describes you
-                </p>
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem className="space-y-8 mb-12 lg:20">
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-9 lg:space-y-16"
-                        >
-                          <FormItem className="flex space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="business" />
-                            </FormControl>
-                            <FormLabel className="font-bold">
-                              Registered Business
-                              <FormDescription className="mt-3.5 font-normal">
-                                A registered business refers to a legally
-                                recognized entity that has undergone the
-                                necessary registration and incorporation
-                                processes. It typically includes companies,
-                                corporations, partnerships, and other formal
-                                business structures. Registered businesses are
-                                required to provide specific legal documentation
-                                during the onboarding process, such as an
-                                official business name, registration number, tax
-                                identification number, and other relevant
-                                information.
-                              </FormDescription>
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="individual" />
-                            </FormControl>
-                            <FormLabel className="font-bold">
-                              Individual Business
-                              <FormDescription className="mt-3.5 font-normal">
-                                An individual business refers to a business
-                                operated by a single person without any formal
-                                legal structure. This type of business is often
-                                referred to as a sole proprietorship. Individual
-                                businesses are typically owned and managed by
-                                one individual and are not legally separate from
-                                the owner. In the onboarding process, individual
-                                businesses may be required to provide personal
-                                identification information, such as the
-                                owner&apos;s name, contact details, and
-                                identification documents.
-                              </FormDescription>
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full font-bold text-lg hover:bg-primary :hover:opacity-90 transition-opacity  xl:text-2xl"
-                  size="lg"
-                >
-                  Proceed
-                  {form.formState.isSubmitting && (
-                    <Spinner
-                      twColor="text-white before:bg-white"
-                      twSize="w-4 h-4"
-                      className="ml-3"
-                    />
-                  )}
-                </Button>
-                <p className="my-6 text-sm text-center font-medium">
-                  Already have an account?
-                  <Link
-                    href="/login"
-                    className="text-primary hover:underline ml-2"
-                  >
-                    Log In
-                  </Link>
-                </p>
-              </form>
-            </Form>
+          <div className="py-6 px-5 space-y-9 sm:px-8 md:py-8 xl:px-12">
+            <a
+              href="#"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="h-8 w-64 block bg-gray-200 rounded-md"
+            ></a>
+            <a
+              href="#"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="h-8 w-64 block bg-gray-200 rounded-md"
+            ></a>
           </div>
         </Container>
         <WhySkippa />
       </main>
       <Footer />
-    </Layout>
+    </div>
   );
 }

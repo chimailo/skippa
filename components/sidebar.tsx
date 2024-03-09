@@ -105,7 +105,7 @@ export const SIDEBARITEMS = {
 };
 
 type Props = {
-  user?: User | null;
+  user: User;
   active?: string;
   hasChild: boolean;
 };
@@ -120,7 +120,7 @@ export default function Sidebar({ user, active, hasChild }: Props) {
 
   const getUserPerms = () => {
     let perms: string[] = [];
-    (user!.role.permissions as string[]).forEach((p: string) => {
+    (user.role.permissions as string[]).forEach((p: string) => {
       let page = p.split(":")[0].toLowerCase();
       const perm = page === "businesses" ? "partners" : page;
 
@@ -129,17 +129,17 @@ export default function Sidebar({ user, active, hasChild }: Props) {
     return perms;
   };
   const isSuperAdmin =
-    user?.role.slug === "business-super-admin" ||
-    user?.role.slug === "individual-super-admin" ||
-    user?.role.slug === "skippa-super-admin";
+    user.role.name === "Super Admin" ||
+    user.role.name === "Individual" ||
+    user.role.name === "Skippa Super Admin";
   const isRider = (label: string) =>
-    user?.role.slug === "business-riders" && getUserPerms().includes(label);
+    user.role.slug === "business-riders" && getUserPerms().includes(label);
   const isCustom = (label: string) =>
-    user?.role.isCustom && getUserPerms().includes(label);
+    user.role.isCustom && getUserPerms().includes(label);
 
   const getSidebarItems = () => {
     const items =
-      user?.type === "admin" || user?.status === "activated"
+      user.type === "admin" || user.status === "activated"
         ? Object.entries(SIDEBARITEMS)
             .filter(([_, item]) => !item.type || item.type.includes(user.type))
             .filter(
@@ -158,7 +158,7 @@ export default function Sidebar({ user, active, hasChild }: Props) {
         collapsed ? "w-14" : "w-64"
       )}
     >
-      <SidebarMenu collapsed={collapsed} name={user?.company}>
+      <SidebarMenu collapsed={collapsed} name={user.company}>
         {sidebarItems.map((item) => (
           <SidebarItem
             key={item.href}

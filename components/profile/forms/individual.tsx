@@ -58,23 +58,10 @@ type Props = {
   token: string | null;
 };
 
-const uploadFiles = async (file: FormData) => {
-  return await fetch(`${process.env.baseUrl}/upload/media`, {
-    method: "POST",
-    body: file,
-  });
-};
-
-const uploadDoc = async (form: FormData) => {
-  return await fetch(`${process.env.baseUrl}/upload/document`, {
+const uploadFiles = async (form: FormData, type: string = "media") => {
+  return await fetch(`${process.env.baseUrl}/upload/${type}`, {
     method: "POST",
     body: form,
-  });
-};
-
-const deleteFiles = async (id: string) => {
-  return await fetch(`/api/uploads/${id}`, {
-    method: "DELETE",
   });
 };
 
@@ -87,6 +74,7 @@ export default function IndividualForm({ token, data, user }: Props) {
   const [vPapers, setVPapers] = useState<Record<string, string>[]>([]);
   const [vPapersError, setVPaperError] = useState<string>();
   const [states, setStates] = useState([]);
+  const [banks, setBanks] = useState([]);
   const [countries, setCountries] = useState([]);
 
   const business = data.business;
@@ -138,7 +126,17 @@ export default function IndividualForm({ token, data, user }: Props) {
   const { data: res } = useSWR(`/options/countries`, () =>
     $api({ url: `/options/countries` })
   );
+  const { data: bnks } = useSWR(`/options/banks`, () =>
+    $api({ url: `/options/banks` })
+  );
   const { dateFrom, dateTo, defaultMonth } = dobRange();
+
+  useEffect(() => {
+    if (bnks) {
+      const b = bnks.data;
+      setBanks(b);
+    }
+  }, [bnks]);
 
   useEffect(() => {
     const image = business.contactInformation?.person.image || "";
@@ -151,14 +149,14 @@ export default function IndividualForm({ token, data, user }: Props) {
     if (vp.length) {
       const papers = vp.map((paper: any) => {
         return {
-          url: paper.vehicalPaperImages || "",
+          url: paper.vehiclePaperImages || "",
           type: paper.type,
           name: paper.name,
         };
       });
       setVPapers(papers);
       const papersUrl = papers.map((paper: any) => ({
-        vehicalPaperImages: paper.url,
+        vehiclePaperImages: paper.url,
         type: "image",
         name: paper.name,
       }));
@@ -199,7 +197,6 @@ export default function IndividualForm({ token, data, user }: Props) {
 
         if (!res.ok) {
           toast({
-            duration: 1000 * 5,
             variant: "destructive",
             title: "Error",
             description:
@@ -216,10 +213,11 @@ export default function IndividualForm({ token, data, user }: Props) {
         };
 
         setPassport(image);
-        form.setValue("image", image.url);
+        form.setValue("image", image.url, {
+          shouldValidate: true,
+        });
       } catch (error) {
         toast({
-          duration: 1000 * 5,
           variant: "destructive",
           title: "Error",
           description: "Ooops..., an error has occured, please try again",
@@ -230,7 +228,10 @@ export default function IndividualForm({ token, data, user }: Props) {
     }
   };
 
-  const handlePaperUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePaperUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    doc?: string
+  ) => {
     const file = e.target.files?.item(0);
 
     if (!file) return;
@@ -242,24 +243,17 @@ export default function IndividualForm({ token, data, user }: Props) {
       return;
     }
 
-    const fileExists = vPapers.find((paper) => paper.name === file.name);
-
-    if (fileExists) {
-      setVPaperError(`${file.name} file already exists`);
-      return;
-    }
-
+    const fileType = file.type.includes("image") ? "media" : "document";
     const imgForm = new FormData();
     imgForm.append("files", file);
 
     try {
       setPaperUploading(true);
-      const res = await uploadDoc(imgForm);
+      const res = await uploadFiles(imgForm, fileType);
       const { data } = await res.json();
 
       if (!res.ok) {
         toast({
-          duration: 1000 * 5,
           variant: "destructive",
           title: "Error",
           description:
@@ -276,17 +270,24 @@ export default function IndividualForm({ token, data, user }: Props) {
         id: data[0].assetId,
       };
 
-      const papers = [...vPapers, paper];
+      const p = vPapers.filter((paper) => paper.name !== doc);
+      const papers = doc ? [...p, paper] : [...vPapers, paper];
       setVPapers(papers);
+      // localStorage.setItem("vPapers", JSON.stringify(papers));
       const papersUrl = papers.map((paper) => ({
-        vehicalPaperImages: paper.url,
-        type: "image",
+        vehiclePaperImages: paper.url,
         name: paper.name,
+        type: "Vehicle Paper",
       }));
-      form.setValue("vehiclePapers", papersUrl);
+      form.setValue("vehiclePapers", papersUrl, {
+        shouldValidate: true,
+      });
+
+      // Reset input value, incase user selects the same file again
+      e.target.value = "";
     } catch (error) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -298,35 +299,7 @@ export default function IndividualForm({ token, data, user }: Props) {
 
   const removePaper = async (paper: Record<string, string>) => {
     const vpapersArr = vPapers.filter((vp) => paper.name !== vp.name);
-
-    try {
-      setPaperUploading(true);
-      const res = await deleteFiles(paper.id);
-      const data = await res.json();
-
-      if (!data.success) {
-        toast({
-          duration: 1000 * 5,
-          variant: "destructive",
-          title: "Error",
-          description:
-            data.message || "Failed to remove vehicle paper, please try again",
-        });
-        return;
-      }
-
-      setVPapers(vpapersArr);
-      localStorage.setItem("vPapers", JSON.stringify(vpapersArr));
-    } catch (error) {
-      toast({
-        duration: 1000 * 5,
-        variant: "destructive",
-        title: "Error",
-        description: "Ooops..., an error has occured, please try again",
-      });
-    } finally {
-      setPaperUploading(false);
-    }
+    setVPapers(vpapersArr);
   };
 
   async function handleSubmit(formData: FormDataType) {
@@ -354,14 +327,14 @@ export default function IndividualForm({ token, data, user }: Props) {
       update({ status, verificationCount });
 
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         description:
           res.message || "Your business details was successfully updated",
       });
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:
@@ -428,32 +401,52 @@ export default function IndividualForm({ token, data, user }: Props) {
                   )}
                 </div>
                 {vPapers.length ? (
-                  <div className="flex items-end gap-3">
-                    <ul className="flex items-center flex-wrap gap-2">
+                  <div className="flex gap-3 items-end">
+                    <ul className="flex items-center gap-2 flex-wrap">
                       {vPapers.map((paper, i) => (
-                        <li
+                        <FormLabel
                           key={i}
-                          className="relative after:absolute after:inset-0 after:bg-transparent hover:after:bg-black/10 after:transition-colors w-[6.5rem] h-10 text-center"
+                          htmlFor={paper.name}
+                          className="transition-colors block h-12 w-24 hover:border-gray-200 hover:border-2 rounded-md text-center px-2 py-1 relative"
                         >
+                          <FormControl>
+                            <input
+                              accept="image/*, application/pdf"
+                              id={paper.name}
+                              type="file"
+                              disabled={!isEditing}
+                              className="sr-only"
+                              onChange={(e) => handlePaperUpload(e, paper.name)}
+                            />
+                          </FormControl>
                           <p className="mb-1 font-semibold text-xs truncate">
                             {paper.name}
                           </p>
                           <p className="font-medium text-gray-500 text-xs">
                             {paper?.size}
                           </p>
-                          {/* <button
-                            className="rounded-full bg-white p-1 z-10 absolute right-0 bottom-0"
-                            type="button"
-                            onClick={() => removePaper(paper)}
-                          >
-                            <X className="w-4 h-4" />
-                          </button> */}
-                        </li>
+                          {isEditing && (
+                            <button
+                              className="rounded-full bg-white p-0.5 z-10 absolute -left-1 -top-1 border border-red-500"
+                              type="button"
+                              onClick={() => removePaper(paper)}
+                            >
+                              <X className="w-3 h-3 fill-red-500" />
+                            </button>
+                          )}
+                          {isEditing && (
+                            <span className="rounded-full bg-white p-1 absolute right-0 bottom-0">
+                              <Edit2 className="w-2 h-2" />
+                            </span>
+                          )}
+                        </FormLabel>
                       ))}
                     </ul>
-                    <FormLabel className="w-6 h-6 rounded-full flex items-center flex-shrink-0 justify-center border border-primary">
-                      <Plus className="w-3 h-3" />
-                    </FormLabel>
+                    {vPapers.length < 4 && (
+                      <FormLabel className="w-4 h-4 rounded-full flex items-center flex-shrink-0 justify-center border-2 border-primary">
+                        <Plus className="w-3 h-3 text-primary" />
+                      </FormLabel>
+                    )}
                   </div>
                 ) : (
                   <FormLabel className="text-xs py-1 w-full flex items-center bg-gray-100/40 gap-1 hover:bg-gray-100 transition-colors border border-dashed rounded-lg flex-col">
@@ -463,10 +456,10 @@ export default function IndividualForm({ token, data, user }: Props) {
                 )}
                 <FormControl>
                   <input
+                    accept="image/*, application/pdf"
                     type="file"
-                    disabled={!isEditing}
-                    accept="image/*"
                     className="sr-only"
+                    disabled={!isEditing}
                     onChange={handlePaperUpload}
                   />
                 </FormControl>
@@ -502,9 +495,11 @@ export default function IndividualForm({ token, data, user }: Props) {
                         />
                       </AvatarImage>
                       <FormLabel className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors block w-full"></FormLabel>
-                      <span className="rounded-full bg-white p-1 absolute right-0 bottom-0">
-                        <Edit2 className="w-2 h-2" />
-                      </span>
+                      {isEditing && (
+                        <span className="rounded-full bg-white p-1 absolute right-0 bottom-0">
+                          <Edit2 className="w-2 h-2" />
+                        </span>
+                      )}
                     </Avatar>
                     <span className="text-xs text-gray-600">
                       <p className="mb-1 font-medium">{passport?.name}</p>
@@ -536,13 +531,28 @@ export default function IndividualForm({ token, data, user }: Props) {
             control={form.control}
             name="bankAccountDetail.bankName"
             render={({ field }) => (
-              <FormItem className="w-full space-y-0">
+              <FormItem className="w-full">
                 <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
                   Bank Name
                 </FormLabel>
-                <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
-                </FormControl>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  disabled={!isEditing}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-80">
+                    {banks.map((bank: any) => (
+                      <SelectItem key={bank.id} value={bank.name}>
+                        {bank.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -551,7 +561,7 @@ export default function IndividualForm({ token, data, user }: Props) {
             control={form.control}
             name="bankAccountDetail.accountNumber"
             render={({ field }) => (
-              <FormItem className="w-full space-y-0">
+              <FormItem className="w-full">
                 <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
                   Bank Accont No.
                 </FormLabel>

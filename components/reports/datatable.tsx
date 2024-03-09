@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn, formatAmount } from "@/lib/utils";
+import { cn, formatAmount, formatText, orderStatus } from "@/lib/utils";
 
 type Props = {
   serialNo: number;
@@ -19,11 +19,9 @@ type Props = {
 const formatReport = (reports: any[]) =>
   reports.map((report) => ({
     id: report.id,
-    status: (
-      report.orderStatus[0].toUpperCase() + report.orderStatus.slice(1)
-    ).replaceAll("_", " "),
-    paymentMethod: report.paymentMethod || "Not Available",
-    income: formatAmount(report.priceEstimate),
+    status: orderStatus[report.orderStatus as keyof typeof orderStatus],
+    paymentMethod: formatText(report.paymentOption),
+    income: formatAmount(report.priceEstimate || 0),
     time: format(new Date(report.createdAt), "HH:mm"),
     date: format(new Date(report.createdAt), "dd/MM/yyyy"),
   }));
@@ -75,11 +73,16 @@ export default function DataTable({ reports, serialNo }: Props) {
             <TableCell align="center" className="capitalize">
               {report.id}
             </TableCell>
-            <TableCell align="center" className="whitespace-nowrap">
-              {report.status}
+            <TableCell align="center">
+              <span
+                className="px-2.5 py-1 text-xs rounded-full whitespace-nowrap text-white"
+                style={{ backgroundColor: report.status.color }}
+              >
+                {report.status.label}
+              </span>
             </TableCell>
             <TableCell align="center">{report.paymentMethod}</TableCell>
-            <TableCell align="right">{report.income}</TableCell>
+            <TableCell align="center">{report.income}</TableCell>
             <TableCell align="center">{report.time}</TableCell>
             <TableCell align="center">{report.date}</TableCell>
           </TableRow>

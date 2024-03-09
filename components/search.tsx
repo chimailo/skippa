@@ -9,17 +9,19 @@ import useDebounce from "@/hooks/debounce";
 type Props = {
   placeholder: string;
   searching: boolean;
+  searchKey?: string;
   handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
   searchRecords: () => void;
 };
 
 export default function Search(props: Props) {
-  const { searching, placeholder, handleSearch, searchRecords } = props;
+  const { searchKey, searching, placeholder, handleSearch, searchRecords } =
+    props;
   const searchParams = useSearchParams();
   const ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const name = searchParams.get("name");
+    const name = searchParams.get(searchKey || "name");
 
     if (ref.current && name) {
       ref.current.value = name;

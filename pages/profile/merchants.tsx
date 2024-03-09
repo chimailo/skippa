@@ -34,7 +34,7 @@ export default function MerchantProfile({
         if (err.data.name === "UnauthorizedError") {
           signOut();
           toast({
-            duration: 1000 * 5,
+            duration: 1000 * 4,
             variant: "destructive",
             title: splitCamelCaseText(error.name) || undefined,
             description:

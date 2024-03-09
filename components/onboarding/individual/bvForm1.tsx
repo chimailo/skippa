@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import Image from "next/image";
 import { UseFormReturn } from "react-hook-form";
 import { CalendarIcon, Edit2, HelpCircle, Plus, Upload, X } from "lucide-react";
@@ -21,6 +22,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Tooltip,
   TooltipArrow,
   TooltipContent,
@@ -28,11 +36,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, dobRange, validatePaper, validatePassport } from "@/lib/utils";
+import {
+  cn,
+  dobRange,
+  isObjectEmpty,
+  validatePaper,
+  validatePassport,
+} from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import Spinner from "@/components/spinner";
-import useSession from "@/hooks/session";
+import $api from "@/lib/axios";
 
 type FormDataType = UseFormReturn<
   {
@@ -45,13 +59,13 @@ type FormDataType = UseFormReturn<
       firstName: string;
       email: string;
     };
-    deliveryCategory: [string, ...string[]];
+    deliveryCategory: string[];
     bankAccountDetail: {
       bankName: string;
       accountNumber: string;
     };
     vehiclePapers: Array<{
-      vehicalPaperImages: string;
+      vehiclePaperImages: string;
       type: string;
       name: string;
     }>;
@@ -72,67 +86,71 @@ type FormDataType = UseFormReturn<
 >;
 
 type Props = {
-  page: number;
   form: FormDataType;
+  passport: Record<string, string>;
+  vPapers: Record<string, string>[];
+  setPassport: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  setVPapers: React.Dispatch<React.SetStateAction<Record<string, string>[]>>;
 };
 
 const CATEGORIES = ["motorcycle", "car", "van", "truck"];
 
-const uploadFiles = async (form: FormData) => {
-  return await fetch(`${process.env.baseUrl}/upload/media`, {
+const uploadFiles = async (form: FormData, type: string = "media") => {
+  return await fetch(`${process.env.baseUrl}/upload/${type}`, {
     method: "POST",
     body: form,
   });
 };
 
-const uploadDoc = async (form: FormData) => {
-  return await fetch(`${process.env.baseUrl}/upload/document`, {
-    method: "POST",
-    body: form,
-  });
-};
+export default function BusinessVerificationForm1(props: Props) {
+  const { form, passport, setPassport, vPapers, setVPapers } = props;
 
-const deleteFiles = async (id: string) => {
-  return await fetch(`/api/uploads`, {
-    method: "PUT",
-    body: JSON.stringify({ id }),
-  });
-};
-
-export default function BusinessVerificationForm1({ form, page }: Props) {
   const [isPaperUploading, setPaperUploading] = useState(false);
   const [isImageUploading, setImageUploading] = useState(false);
-  const [passport, setPassport] = useState<Record<string, string>>();
   const [passportError, setPassportError] = useState<string>();
-  const [vPapers, setVPapers] = useState<Record<string, string>[]>([]);
   const [vPapersError, setVPaperError] = useState<string>();
+  const [banks, setBanks] = useState([]);
+  // const [passport, setPassport] = useState<Record<string, string>>();
+  // const [vPapers, setVPapers] = useState<Record<string, string>[]>([]);
 
   const { toast } = useToast();
   const { dateFrom, dateTo, defaultMonth } = dobRange();
 
+  const { data } = useSWR(`/options/banks`, () =>
+    $api({ url: `/options/banks` })
+  );
+
   useEffect(() => {
-    const passport: Record<string, string> = JSON.parse(
-      localStorage.getItem("passport") as string
-    );
-    const vPapers: Record<string, string>[] = JSON.parse(
-      localStorage.getItem("vPapers") as string
-    );
+    if (data) {
+      const banks = data.data;
 
-    if (passport) {
-      setPassport(passport);
-      form.setValue("image", passport.url);
+      setBanks(banks);
     }
+  }, [data]);
 
-    if (vPapers) {
-      const papers = vPapers.map((paper) => ({
-        vehicalPaperImages: paper.url,
-        type: "image",
-        name: paper.name,
-      }));
-      form.setValue("vehiclePapers", papers);
-      setVPapers(vPapers);
-    }
-  }, []);
+  // useEffect(() => {
+  //   const passport: Record<string, string> = JSON.parse(
+  //     localStorage.getItem("passport") as string
+  //   );
+  //   const vPapers: Record<string, string>[] = JSON.parse(
+  //     localStorage.getItem("vPapers") as string
+  //   );
+
+  //   if (passport) {
+  //     setPassport(passport);
+  //     form.setValue("image", passport.url);
+  //   }
+
+  //   if (vPapers) {
+  //     const papers = vPapers.map((paper) => ({
+  //       vehiclePaperImages: paper.url,
+  //       type: "image",
+  //       name: paper.name,
+  //     }));
+  //     form.setValue("vehiclePapers", papers);
+  //     setVPapers(vPapers);
+  //   }
+  // }, []);
 
   const handleImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageUploading(true);
@@ -156,7 +174,7 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
         if (!res.ok) {
           toast({
             variant: "destructive",
-            duration: 1000 * 5,
+            duration: 1000 * 4,
             title: "Error",
             description:
               data?.message ||
@@ -172,11 +190,13 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
         };
 
         setPassport(image);
-        form.setValue("image", image.url);
-        localStorage.setItem("passport", JSON.stringify(image));
+        form.setValue("image", image.url, {
+          shouldValidate: true,
+        });
+        // localStorage.setItem("passport", JSON.stringify(image));
       } catch (error) {
         toast({
-          duration: 1000 * 5,
+          duration: 1000 * 4,
           variant: "destructive",
           title: "Error",
           description: "Ooops..., an error has occured, please try again",
@@ -187,7 +207,10 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
     }
   };
 
-  const handlePaperUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePaperUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    doc?: string
+  ) => {
     const file = e.target.files?.item(0);
 
     if (!file) return;
@@ -199,25 +222,24 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
       return;
     }
 
-    const fileExists = vPapers.find((paper) => paper.name === file.name);
+    // // Remove when done
+    // form.setValue(
+    //   "image",
+    //   "https://res.cloudinary.com/dh3i1wodq/image/upload/v1675417496/cbimage_3_drqdoc.jpg"
+    // );
 
-    if (fileExists) {
-      setVPaperError(`${file.name} file already exists`);
-      return;
-    }
-
+    const fileType = file.type.includes("image") ? "media" : "document";
     const imgForm = new FormData();
     imgForm.append("files", file);
 
     try {
       setPaperUploading(true);
-      const res = await uploadDoc(imgForm);
+      const res = await uploadFiles(imgForm, fileType);
       const { data } = await res.json();
 
       if (!res.ok) {
         toast({
           variant: "destructive",
-          duration: 1000 * 5,
           title: "Error",
           description:
             data?.message ||
@@ -233,14 +255,23 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
         id: data[0].assetId,
       };
 
-      const papers = [...vPapers, paper];
+      const p = vPapers.filter((paper) => paper.name !== doc);
+      const papers = doc ? [...p, paper] : [...vPapers, paper];
       setVPapers(papers);
-      localStorage.setItem("vPapers", JSON.stringify(papers));
-      const papersUrl = papers.map((paper) => paper.url);
-      form.setValue("vehiclePapers", papersUrl);
+      // localStorage.setItem("vPapers", JSON.stringify(papers));
+      const papersUrl = papers.map((paper) => ({
+        vehiclePaperImages: paper.url as string,
+        name: paper.name as string,
+        type: "Vehicle Paper",
+      }));
+      form.setValue("vehiclePapers", papersUrl, {
+        shouldValidate: true,
+      });
+
+      // Reset input value, incase user selects the same file again
+      e.target.value = "";
     } catch (error) {
       toast({
-        duration: 1000 * 5,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -252,35 +283,35 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
 
   const removePaper = async (paper: Record<string, string>) => {
     const vpapersArr = vPapers.filter((vp) => paper.name !== vp.name);
+    setVPapers(vpapersArr);
 
-    try {
-      setPaperUploading(true);
-      const res = await deleteFiles(paper.id);
-      const data = await res.json();
-      console.log(data);
+    // try {
+    //   setPaperUploading(true);
+    //   const res = await deleteFiles(paper.id);
+    //   const data = await res.json();
+    //   console.log(data);
 
-      if (data.result !== "ok") {
-        toast({
-          variant: "destructive",
-          duration: 1000 * 5,
-          title: "Error",
-          description: "Failed to delete vehicle paper, please try again",
-        });
-        return;
-      }
+    //   if (data.result !== "ok") {
+    //     toast({
+    //       variant: "destructive",
+    //       duration: 1000 * 4,
+    //       title: "Error",
+    //       description: "Failed to delete vehicle paper, please try again",
+    //     });
+    //     return;
+    //   }
 
-      setVPapers(vpapersArr);
-      localStorage.setItem("vPapers", JSON.stringify(vpapersArr));
-    } catch (error) {
-      toast({
-        duration: 1000 * 5,
-        variant: "destructive",
-        title: "Error",
-        description: "Ooops..., an error has occured, please try again",
-      });
-    } finally {
-      setPaperUploading(false);
-    }
+    //   // localStorage.setItem("vPapers", JSON.stringify(vpapersArr));
+    // } catch (error) {
+    //   toast({
+    //     duration: 1000 * 4,
+    //     variant: "destructive",
+    //     title: "Error",
+    //     description: "Ooops..., an error has occured, please try again",
+    //   });
+    // } finally {
+    //   setPaperUploading(false);
+    // }
   };
 
   return (
@@ -337,32 +368,47 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
                 )}
               </div>
               {vPapers.length ? (
-                <div className="flex items-end gap-3">
-                  <ul className="flex items-center gap-2">
+                <div className="flex gap-3 items-end">
+                  <ul className="flex items-center gap-2 flex-wrap">
                     {vPapers.map((paper, i) => (
-                      <li
+                      <FormLabel
                         key={i}
-                        className="relative after:absolute after:inset-0 after:bg-transparent hover:after:bg-black/10 after:transition-colors w-[6.5rem] h-10 text-center"
+                        htmlFor={paper.name}
+                        className="transition-colors block h-12 w-24 hover:border-gray-200 hover:border-2 rounded-md text-center px-2 py-1 relative"
                       >
+                        <FormControl>
+                          <input
+                            accept="image/*, application/pdf"
+                            id={paper.name}
+                            type="file"
+                            className="sr-only"
+                            onChange={(e) => handlePaperUpload(e, paper.name)}
+                          />
+                        </FormControl>
                         <p className="mb-1 font-semibold text-xs truncate">
                           {paper.name}
                         </p>
                         <p className="font-medium text-gray-500 text-xs">
                           {paper?.size}
                         </p>
-                        {/* <button
-                          className="rounded-full bg-white p-1 z-10 absolute right-0 bottom-0"
+                        <button
+                          className="rounded-full bg-white p-0.5 z-10 absolute -left-1 -top-1 border border-red-500"
                           type="button"
-                          // onClick={() => removePaper(paper)}
+                          onClick={() => removePaper(paper)}
                         >
-                          <X className="w-4 h-4" />
-                        </button> */}
-                      </li>
+                          <X className="w-3 h-3 fill-red-500" />
+                        </button>
+                        <span className="rounded-full bg-white p-1 absolute right-0 bottom-0">
+                          <Edit2 className="w-2 h-2" />
+                        </span>
+                      </FormLabel>
                     ))}
                   </ul>
-                  <FormLabel className="w-6 h-6 rounded-full flex items-center flex-shrink-0 justify-center border border-primary">
-                    <Plus className="w-3 h-3" />
-                  </FormLabel>
+                  {vPapers.length < 4 && (
+                    <FormLabel className="w-4 h-4 rounded-full flex items-center flex-shrink-0 justify-center border-2 border-primary">
+                      <Plus className="w-3 h-3 text-primary" />
+                    </FormLabel>
+                  )}
                 </div>
               ) : (
                 <FormLabel className="text-xs py-1 w-full flex items-center bg-gray-100/40 gap-1 hover:bg-gray-100 transition-colors border border-dashed rounded-lg flex-col">
@@ -372,8 +418,8 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
               )}
               <FormControl>
                 <input
+                  accept="image/*, application/pdf"
                   type="file"
-                  accept="image/*"
                   className="sr-only"
                   onChange={handlePaperUpload}
                 />
@@ -398,7 +444,7 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
                   />
                 )}
               </div>
-              {passport ? (
+              {!isObjectEmpty(passport) ? (
                 <div className="flex items-center gap-3">
                   <Avatar className="rounded-none relative">
                     <AvatarImage asChild src={passport.url}>
@@ -409,7 +455,7 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
                         alt="Director's passport"
                       />
                     </AvatarImage>
-                    <FormLabel className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors block w-full"></FormLabel>
+                    <FormLabel className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors block w-full z-10"></FormLabel>
                     <span className="rounded-full bg-white p-1 absolute right-0 bottom-0">
                       <Edit2 className="w-2 h-2" />
                     </span>
@@ -443,13 +489,24 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
           control={form.control}
           name="bankAccountDetail.bankName"
           render={({ field }) => (
-            <FormItem className="w-full space-y-0">
+            <FormItem className="w-full">
               <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
                 Bank Name
               </FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="max-h-80">
+                  {banks.map((bank: any) => (
+                    <SelectItem key={bank.id} value={bank.name}>
+                      {bank.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -458,12 +515,12 @@ export default function BusinessVerificationForm1({ form, page }: Props) {
           control={form.control}
           name="bankAccountDetail.accountNumber"
           render={({ field }) => (
-            <FormItem className="w-full space-y-0">
+            <FormItem className="w-full">
               <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
                 Bank Accont No.
               </FormLabel>
               <FormControl>
-                <Input type="text" {...field} />
+                <Input {...field} type="number" inputMode="numeric" />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -18,6 +18,7 @@ import { SessionData } from "@/types";
 import { splitCamelCaseText } from "@/lib/utils";
 import useSession from "@/hooks/session";
 import NoData from "@/components/nodata";
+import useUser from "@/hooks/user";
 
 const endpoint = `/customers`;
 
@@ -53,7 +54,7 @@ export default function Customers({
         if (error.data.name === "UnauthorizedError") {
           signOut();
           toast({
-            duration: 1000 * 5,
+            duration: 1000 * 4,
             variant: "destructive",
             title: splitCamelCaseText(error.data.name) || undefined,
             description: error.data.message || "Your session has expired",
@@ -68,6 +69,8 @@ export default function Customers({
     };
     fetchCustomers();
   }, []);
+
+  useUser();
 
   const getFilters = () => {
     const filter: Record<string, string> = {};
@@ -135,7 +138,7 @@ export default function Customers({
       setData(response.data, filtersApplied);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to apply filters",
@@ -169,7 +172,7 @@ export default function Customers({
       setData(response.data, params);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch previous page",
@@ -200,7 +203,7 @@ export default function Customers({
       setData(response.data, params);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch the next page",
@@ -213,6 +216,16 @@ export default function Customers({
     } finally {
       setFetching(false);
     }
+  };
+
+  const noDataMessage = () => {
+    const filters = getFilters();
+    const hasFilters = Object.keys(filters).length > 0;
+    const filtersMsg =
+      "Looks like we couldn't find any matches for your search";
+    return hasFilters || search
+      ? filtersMsg
+      : "There is currently no customer entry";
   };
 
   return (
@@ -258,7 +271,7 @@ export default function Customers({
               )}
             </>
           ) : (
-            <NoData message="There is currently no customer entry" />
+            <NoData message={noDataMessage()} />
           )}
         </div>
       )}

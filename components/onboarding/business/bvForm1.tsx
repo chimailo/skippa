@@ -45,7 +45,7 @@ type FormDataType = UseFormReturn<
     supportEmail?: string;
     tin: string;
     registrationNumber: string;
-    deliveryCategory: [string, ...string[]];
+    deliveryCategory: string[];
     bankAccountDetail: {
       bankName: string;
       accountNumber: string;
@@ -71,11 +71,13 @@ type FormDataType = UseFormReturn<
     };
   },
   any,
-  undefined
+  any
 >;
 
 type Props = {
   form: FormDataType;
+  passport: Record<string, string>;
+  setPassport: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 };
 
 const uploadFiles = async (form: FormData) => {
@@ -85,24 +87,25 @@ const uploadFiles = async (form: FormData) => {
   });
 };
 
-export default function BusinessVerificationForm1({ form }: Props) {
+export default function BusinessVerificationForm1(props: Props) {
+  const { form, passport, setPassport } = props;
   const [isImageUploading, setImageUploading] = useState(false);
-  const [passport, setPassport] = useState<Record<string, string>>();
+  // const [passport, setPassport] = useState<Record<string, string>>();
   const [passportError, setPassportError] = useState<string>();
 
   const { toast } = useToast();
   const { dateFrom, dateTo, defaultMonth } = dobRange();
 
-  useEffect(() => {
-    const passport: Record<string, string> = JSON.parse(
-      localStorage.getItem("passport") as string
-    );
+  // useEffect(() => {
+  //   const passport: Record<string, string> = JSON.parse(
+  //     localStorage.getItem("passport") as string
+  //   );
 
-    if (passport) {
-      setPassport(passport);
-      form.setValue("directorDetail.image", passport.url);
-    }
-  }, []);
+  //   if (passport) {
+  //     setPassport(passport);
+  //     form.setValue("directorDetail.image", passport.url);
+  //   }
+  // }, []);
 
   const handleImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.item(0);
@@ -127,7 +130,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
       if (!res.ok) {
         toast({
           variant: "destructive",
-          duration: 1000 * 5,
+          duration: 1000 * 4,
           title: "Error",
           description:
             data?.message ||
@@ -144,10 +147,10 @@ export default function BusinessVerificationForm1({ form }: Props) {
 
       setPassport(image);
       form.setValue("directorDetail.image", image.url);
-      localStorage.setItem("passport", JSON.stringify(image));
+      // localStorage.setItem("passport", JSON.stringify(image));
     } catch (error) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: "Error",
         description: "Ooops..., an error has occured, please try again",
@@ -199,7 +202,7 @@ export default function BusinessVerificationForm1({ form }: Props) {
             <FormItem className="w-full">
               <FormLabel className="">Support Email</FormLabel>
               <FormControl>
-                <Input type="text" {...field} />
+                <Input type="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -150,7 +150,7 @@ export default function InviteUser({ token, roles, fetchTeam }: Props) {
       });
 
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         title: splitCamelCaseText(response.name) || undefined,
         description: response.message || "Invitation link sent successfully",
@@ -162,7 +162,7 @@ export default function InviteUser({ token, roles, fetchTeam }: Props) {
       setOpen(false);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to invite this user",

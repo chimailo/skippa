@@ -87,7 +87,6 @@ export default function ForgotPasswordForm() {
       });
 
       toast({
-        duration: 1000 * 5,
         variant: "primary",
         title: splitCamelCaseText(res.name) || undefined,
         description:
@@ -96,13 +95,9 @@ export default function ForgotPasswordForm() {
           "Your account was created successfully",
       });
       form.reset();
-
-      setTimeout(() => {
-        router.push("/login");
-      }, 9000);
+      router.push("/login");
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.data?.name) || undefined,
         description:

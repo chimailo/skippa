@@ -1,11 +1,19 @@
 import Svg from "@/components/svg/base";
+import { cn } from "@/lib/utils";
 
-export default function Logo() {
+export type Props = {
+  className?: string;
+};
+
+export default function Logo({ className }: Props) {
   return (
     <Svg
       viewBox="0 0 31 33"
       fill="none"
-      className="w-8 h-8 text-primary fill-current"
+      className={cn(
+        "text-primary fill-current",
+        className ? className : "w-8 h-8"
+      )}
     >
       <path
         fillRule="evenodd"

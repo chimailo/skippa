@@ -52,7 +52,7 @@ export default function ForgotPasswordForm() {
       });
 
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "primary",
         title: splitCamelCaseText(res.name) || undefined,
         description:
@@ -66,7 +66,7 @@ export default function ForgotPasswordForm() {
       }, 9000);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error?.data?.name) || undefined,
         description:

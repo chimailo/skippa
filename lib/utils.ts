@@ -31,21 +31,21 @@ export const validatePassport = (file: File) => {
 };
 
 export const validatePaper = (file: File) => {
-  const MAX_FILE_SIZE = 1024 * 1024;
+  const MAX_FILE_SIZE = 1024 * 1024 * 5;
   const ACCEPTED_MIME_TYPES = [
     "image/jpeg",
     "image/jpg",
     "image/png",
-    "image/webp",
+    // "image/webp",
     "application/pdf",
   ];
 
   if (ACCEPTED_MIME_TYPES.every((type) => file.type !== type)) {
-    return `Only .jpg, .jpeg, .png .webp and .pdf files are accepted.`;
+    return `Only .jpg, .jpeg, .png and .pdf files are accepted.`;
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return `Passport must not be larger than 1mb`;
+    return `Document must not be larger than 1mb`;
   }
 };
 
@@ -89,6 +89,23 @@ export function getStatus() {
   };
 }
 
+export const orderStatus = {
+  accepted: { label: "Accepted", color: "#2196F3" },
+  pending_request: { label: "Pending request", color: "#2196F3" },
+  transit_to_sender: { label: "In transit to sender", color: "#2196F3" },
+  picked_up_from_sender: {
+    label: "Picked up from sender",
+    color: "#2196F3",
+  },
+  transit_to_receiver: {
+    label: "In transit to receiver",
+    color: "#2196F3",
+  },
+  ready_for_pickup: { label: "Ready for pickup", color: "#2196F3" },
+  delivered: { label: "Delivered", color: "#5FDBA7" },
+  cancelled: { label: "Cancelled", color: "#FF0000" },
+};
+
 export const getSanitizedMarkup = (content: string) =>
   DOMPurify.sanitize(marked.parse(content) as string);
 
@@ -102,3 +119,9 @@ export const formatAmount = (
     ...options,
   }).format(amount);
 };
+
+export function formatText(text: string) {
+  if (!text) return "Not available";
+
+  return text[0].toUpperCase() + text.replaceAll("_", " ").slice(1);
+}

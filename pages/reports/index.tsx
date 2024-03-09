@@ -17,6 +17,7 @@ import $api from "@/lib/axios";
 import { SessionData } from "@/types";
 import { splitCamelCaseText } from "@/lib/utils";
 import useSession from "@/hooks/session";
+import useUser from "@/hooks/user";
 import NoData from "@/components/nodata";
 
 export default function Reports({
@@ -52,12 +53,11 @@ export default function Reports({
         setReport(response.data.docs);
         setPagination(response.data.pagination);
       } catch (error: any) {
-        if (error.data.name === "UnauthorizedError") {
+        if (error.data?.name === "UnauthorizedError") {
           signOut();
           toast({
-            duration: 1000 * 5,
             variant: "destructive",
-            title: splitCamelCaseText(error.data.name) || undefined,
+            title: splitCamelCaseText(error.data?.name) || undefined,
             description: error.data.message || "Your session has expired",
           });
           router.push(`/login?callbackUrl=/reports?${search}`);
@@ -71,17 +71,21 @@ export default function Reports({
     fetchReports();
   }, []);
 
+  useUser();
+
   const getFilters = () => {
     const filter: Record<string, string> = {};
-    const end_date = searchParams.get("end_date");
-    const start_date = searchParams.get("start_date");
-    const status = searchParams.get("status");
-    const payMethod = searchParams.get("method");
+    const end_date = searchParams.get("endDate");
+    const start_date = searchParams.get("startDate");
+    const status = searchParams.get("orderStatus");
+    const type = searchParams.get("orderType");
+    const payMethod = searchParams.get("paymentOption");
 
-    if (start_date) filter.start_date = start_date;
-    if (end_date) filter.end_date = end_date;
-    if (status) filter.status = status;
-    if (payMethod) filter.payMethod = payMethod;
+    if (start_date) filter.startDate = start_date;
+    if (end_date) filter.endDate = end_date;
+    if (status) filter.orderStatus = status;
+    if (payMethod) filter.paymentOption = payMethod;
+    if (type) filter.orderType = type;
     return filter;
   };
 
@@ -136,7 +140,7 @@ export default function Reports({
       setData(response.data, filtersApplied);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to apply filters",
@@ -170,7 +174,7 @@ export default function Reports({
       setData(response.data, params);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch previous page",
@@ -201,7 +205,7 @@ export default function Reports({
       setData(response.data, params);
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
+        duration: 1000 * 4,
         variant: "destructive",
         title: splitCamelCaseText(error.data.name) || undefined,
         description: error.data.message || "Failed to fetch the next page",
@@ -214,6 +218,16 @@ export default function Reports({
     } finally {
       setFetching(false);
     }
+  };
+
+  const noDataMessage = () => {
+    const filters = getFilters();
+    const hasFilters = Object.keys(filters).length > 0;
+    const filtersMsg =
+      "Looks like we couldn't find any matches for your search";
+    return hasFilters || search
+      ? filtersMsg
+      : "There is currently no report entry";
   };
 
   return (
@@ -232,12 +246,17 @@ export default function Reports({
           <Search
             placeholder="Search ID"
             searching={searching}
+            searchKey="orderId"
             handleSearch={handleSearch}
             searchRecords={searchReports}
           />
           <hr className="bg-slate-100" />
           <div className="flex justify-end px-5">
-            <Filter fetching={filtering} handleFilter={handleFilter} />
+            <Filter
+              fetching={filtering}
+              handleFilter={handleFilter}
+              user={session.user}
+            />
           </div>
           {reports.length ? (
             <>
@@ -259,7 +278,7 @@ export default function Reports({
               )}
             </>
           ) : (
-            <NoData message="There is currently no report entry" />
+            <NoData message={noDataMessage()} />
           )}
         </div>
       )}

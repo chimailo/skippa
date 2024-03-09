@@ -92,7 +92,6 @@ export const EditRole = (props: Props) => {
       });
 
       toast({
-        duration: 1000 * 5,
         variant: "primary",
         description: response.message || "Role updated successfully",
       });
@@ -102,7 +101,6 @@ export const EditRole = (props: Props) => {
       form.reset();
     } catch (error: any) {
       toast({
-        duration: 1000 * 5,
         variant: "destructive",
         title: splitCamelCaseText(error.name) || undefined,
         description:

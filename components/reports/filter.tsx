@@ -30,81 +30,95 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn, orderStatus } from "@/lib/utils";
 import Spinner from "@/components/spinner";
 import { useSearchParams } from "next/navigation";
+import { User } from "@/types";
 
 type Props = {
+  user: User | null;
   fetching: boolean;
   handleFilter: (filter: Record<string, string>) => void;
 };
 
-const orderStatus = [
-  { label: "Accepted", value: "accepted" },
-  { label: "Pending request", value: "pending_request" },
-  { label: "In transit to sender", value: "transit_to_sender" },
-  { label: "Picked up from sender", value: "picked_up_from_sender" },
-  { label: "In transit to receiver", value: "transit_to_receiver" },
-  { label: "Delivered", value: "delivered" },
-  { label: "Cancelled", value: "cancelled" },
+const paymentMethod = [
+  { label: "Cash", value: "cash_on_delivery" },
+  { label: "Wallet", value: "skippa_wallet" },
 ];
 
-const paymentMethod = [
-  { label: "Cash", value: "skippa_wallet" },
-  { label: "Wallet", value: "cash_on_delivery" },
-];
+const orderType = ["single", "bulk"];
 
 const filterSchema = z.object({
-  start_date: z.date().optional(),
-  end_date: z.date().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
   status: z.array(z.string()).optional(),
+  // @ts-ignore
+  type: z.enum(orderType).optional(),
   method: z.array(z.string()).optional(),
 });
 
-export default function Filter({ fetching, handleFilter }: Props) {
+export default function Filter({ fetching, handleFilter, user }: Props) {
   const [open, setOpen] = useState(false);
 
   const searchParams = useSearchParams();
-  const start_date = searchParams.get("start_date");
-  const end_date = searchParams.get("end_date");
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
   const status = searchParams.get("orderStatus");
-  const method = searchParams.get("orderType");
+  const type = searchParams.get("orderType");
+  const method = searchParams.get("paymentOption");
 
   const form = useForm<z.infer<typeof filterSchema>>({
     resolver: zodResolver(filterSchema),
     defaultValues: {
-      start_date: start_date ? new Date(start_date) : undefined,
-      end_date: end_date ? new Date(end_date) : undefined,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
       status: status ? status.split(",") : [],
       method: method ? method.split(",") : [],
+      type: type || undefined,
     },
   });
+
+  const ordStatus = Object.assign(
+    {},
+    ...Object.entries(orderStatus)
+      .filter(([status, _]) => {
+        if (user?.type === "business") {
+          return !(
+            status === "ready_for_pickup" || status === "pending_request"
+          );
+        }
+        return true;
+      })
+      .map(([status, value]) => ({ [status]: value }))
+  );
 
   const handleSubmit = async (data: z.infer<typeof filterSchema>) => {
     let start, end;
     let eday, emonth, eyear;
     let sday, smonth, syear;
-    const { start_date, end_date, status, method } = data;
+    const { startDate, endDate, status, method, type } = data;
 
-    if (start_date) {
-      sday = new Date(start_date).getDate();
-      smonth = new Date(start_date).getMonth() + 1;
-      syear = new Date(start_date).getFullYear();
+    if (startDate) {
+      sday = new Date(startDate).getDate();
+      smonth = new Date(startDate).getMonth() + 1;
+      syear = new Date(startDate).getFullYear();
       start = `${syear}-${smonth}-${sday}`;
     }
 
-    if (end_date) {
-      eday = new Date(end_date).getDate();
-      emonth = new Date(end_date).getMonth() + 1;
-      eyear = new Date(end_date).getFullYear();
+    if (endDate) {
+      eday = new Date(endDate).getDate();
+      emonth = new Date(endDate).getMonth() + 1;
+      eyear = new Date(endDate).getFullYear();
       end = `${eyear}-${emonth}-${eday}`;
     }
 
     const filters = {
-      start_date: start ? start : "",
-      end_date: end ? end : "",
+      startDate: start ? start : "",
+      endDate: end ? end : "",
       orderStatus: status?.length ? status.join() : "",
-      paymentMethod: method?.length ? method.join() : "",
+      orderType: type || "",
+      paymentOption: method?.length ? method.join() : "",
     };
 
     handleFilter(filters);
@@ -112,11 +126,18 @@ export default function Filter({ fetching, handleFilter }: Props) {
   };
 
   const handleClear = () => {
-    form.setValue("start_date", undefined);
-    form.setValue("end_date", undefined);
+    form.setValue("startDate", undefined);
+    form.setValue("endDate", undefined);
     form.setValue("status", []);
+    form.setValue("type", undefined);
     form.setValue("method", []);
-    handleFilter({ start_date: "", end_date: "", status: "", method: "" });
+    handleFilter({
+      startDate: "",
+      endDate: "",
+      status: "",
+      method: "",
+      type: "",
+    });
   };
 
   return (
@@ -152,7 +173,7 @@ export default function Filter({ fetching, handleFilter }: Props) {
               <div className="grid-cols-1 grid md:grid-cols-2 gap-8">
                 <FormField
                   control={form.control}
-                  name="start_date"
+                  name="startDate"
                   render={({ field }) => (
                     <FormItem className="w-full space-y-2">
                       <FormLabel className="text-base text-zinc-500">
@@ -190,7 +211,7 @@ export default function Filter({ fetching, handleFilter }: Props) {
                 />
                 <FormField
                   control={form.control}
-                  name="end_date"
+                  name="endDate"
                   render={({ field }) => (
                     <FormItem className="w-full  space-y-2">
                       <FormLabel className="text-base text-zinc-500">
@@ -235,37 +256,41 @@ export default function Filter({ fetching, handleFilter }: Props) {
                 name="status"
                 render={() => (
                   <FormItem className="flex gap-4 items-center flex-wrap space-y-0">
-                    {orderStatus.map((status) => (
+                    {Object.keys(ordStatus).map((status) => (
                       <FormField
-                        key={status.value}
+                        key={status}
                         control={form.control}
                         name="status"
                         render={({ field }) => {
                           return (
                             <FormItem
-                              key={status.value}
+                              key={status}
                               className="flex flex-row items-start space-x-3 space-y-0"
                             >
                               <FormControl>
                                 <Checkbox
-                                  checked={field.value?.includes(status.value)}
+                                  checked={field.value?.includes(status)}
                                   onCheckedChange={(checked) => {
                                     return checked
                                       ? field.onChange([
                                           // @ts-expect-error
                                           ...field.value,
-                                          status.value,
+                                          status,
                                         ])
                                       : field.onChange(
                                           field.value?.filter(
-                                            (value) => value !== status.value
+                                            (value) => value !== status
                                           )
                                         );
                                   }}
                                 />
                               </FormControl>
                               <FormLabel className="capitalize font-normal">
-                                {status.label}
+                                {
+                                  orderStatus[
+                                    status as keyof typeof orderStatus
+                                  ].label
+                                }
                               </FormLabel>
                             </FormItem>
                           );
@@ -278,6 +303,39 @@ export default function Filter({ fetching, handleFilter }: Props) {
             </div>
             <div className="space-y-3">
               <h3 className="font-bold text-lg">Type</h3>
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem className="flex gap-4 items-center flex-wrap space-y-0">
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex gap-4 item-center"
+                      >
+                        {orderType.map((order) => (
+                          <FormItem
+                            key={order}
+                            className="flex items-center space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <RadioGroupItem value={order} />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {order}
+                            </FormLabel>
+                          </FormItem>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="space-y-3">
+              <h3 className="font-bold text-lg">Payment Method</h3>
               <FormField
                 control={form.control}
                 name="method"
