@@ -75,6 +75,7 @@ export default function LoginForm() {
       const res = await signIn(formData);
       form.reset();
 
+      // @ts-ignore
       const checks = res.data.verificationChecks;
       const to = checks ? `${redirectTo || "/profile"}` : "/onboarding";
       console.log(to);
