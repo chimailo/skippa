@@ -112,9 +112,9 @@ export default function Reports({
       const response = await $api({
         token: session.token,
         url: `${endpoint}`,
-        params: { orderId: search },
+        params: { trackingId: search },
       });
-      setData(response.data, search ? { orderId: search } : {});
+      setData(response.data, search ? { trackingId: search } : {});
     } catch (error: any) {
       setError(error.data.message || `No order ID match the search input`);
     } finally {
@@ -246,7 +246,7 @@ export default function Reports({
           <Search
             placeholder="Search ID"
             searching={searching}
-            searchKey="orderId"
+            searchKey="trackingId"
             handleSearch={handleSearch}
             searchRecords={searchReports}
           />

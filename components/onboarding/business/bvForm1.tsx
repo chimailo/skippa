@@ -35,7 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, dobRange, validatePassport } from "@/lib/utils";
+import { cn, dobRange, isObjectEmpty, validatePassport } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import Spinner from "@/components/spinner";
 
@@ -352,7 +352,7 @@ export default function BusinessVerificationForm1(props: Props) {
                   />
                 )}
               </div>
-              {passport ? (
+              {!isObjectEmpty(passport) ? (
                 <div className="flex items-center gap-3">
                   <Avatar className="rounded-none relative">
                     <AvatarImage asChild src={passport.url}>

@@ -284,6 +284,14 @@ export default function BusinessVerificationForm1(props: Props) {
   const removePaper = async (paper: Record<string, string>) => {
     const vpapersArr = vPapers.filter((vp) => paper.name !== vp.name);
     setVPapers(vpapersArr);
+    const papersUrl = vpapersArr.map((paper) => ({
+      vehiclePaperImages: paper.url as string,
+      name: paper.name as string,
+      type: "Vehicle Paper",
+    }));
+    form.setValue("vehiclePapers", papersUrl, {
+      shouldValidate: true,
+    });
 
     // try {
     //   setPaperUploading(true);
@@ -374,7 +382,7 @@ export default function BusinessVerificationForm1(props: Props) {
                       <FormLabel
                         key={i}
                         htmlFor={paper.name}
-                        className="transition-colors block h-12 w-24 hover:border-gray-200 hover:border-2 rounded-md text-center px-2 py-1 relative"
+                        className="transition-colors block h-12 w-24 border-gray-200 border-2 rounded-md text-center px-2 py-1 relative"
                       >
                         <FormControl>
                           <input
@@ -517,7 +525,7 @@ export default function BusinessVerificationForm1(props: Props) {
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
-                Bank Accont No.
+                Bank Account No.
               </FormLabel>
               <FormControl>
                 <Input {...field} type="number" inputMode="numeric" />

@@ -72,10 +72,13 @@ export default function LoginForm() {
 
   async function onSubmit(formData: FormDataType) {
     try {
-      await signIn(formData);
+      const res = await signIn(formData);
       form.reset();
-      console.log(redirectTo);
-      router.push(`${redirectTo || "/profile"}`);
+
+      const checks = res.data.verificationChecks;
+      const to = checks ? `${redirectTo || "/profile"}` : "/onboarding";
+      console.log(to);
+      router.push(to);
     } catch (error: any) {
       if (error.name === "AccountVerificationError") {
         toast({
@@ -196,7 +199,7 @@ export default function LoginForm() {
                   <p className="text-sm text-center font-medium">
                     Don&apos;t have an account?
                     <Link
-                      href="/"
+                      href="/select-business-type"
                       className="text-primary text-medium hover:underline ml-2"
                     >
                       Sign Up

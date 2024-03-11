@@ -19,6 +19,7 @@ type Props = {
 const formatReport = (reports: any[]) =>
   reports.map((report) => ({
     id: report.id,
+    trackingId: report.trackingId,
     status: orderStatus[report.orderStatus as keyof typeof orderStatus],
     paymentMethod: formatText(report.paymentOption),
     income: formatAmount(report.priceEstimate || 0),
@@ -71,7 +72,7 @@ export default function DataTable({ reports, serialNo }: Props) {
               {serialNo + index}
             </TableCell>
             <TableCell align="center" className="capitalize">
-              {report.id}
+              {report.trackingId}
             </TableCell>
             <TableCell align="center">
               <span

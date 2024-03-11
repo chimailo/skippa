@@ -299,10 +299,10 @@ export default function BusinessVerificationForm2({
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5 after:leading-none">
-                Bank Accont No.
+                Bank Account No.
               </FormLabel>
               <FormControl>
-                <Input type="text" {...field} />
+                <Input {...field} type="number" inputMode="numeric" />
               </FormControl>
               <FormMessage />
             </FormItem>

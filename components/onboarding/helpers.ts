@@ -150,7 +150,8 @@ export const IVFormSchema = z.object({
       type: z.string(),
       name: z.string(),
     })
-    .array(),
+    .array()
+    .nonempty({ message: "Vehicle papers must contain at least one document" }),
   addressDetail: z.object({
     flatNumber: z.string().optional(),
     buildingName: z.string().optional(),
@@ -196,7 +197,8 @@ export const IProfileFormSchema = z.object({
       type: z.string(),
       name: z.string(),
     })
-    .array(),
+    .array()
+    .nonempty({ message: "Vehicle papers must contain at least one document" }),
   addressDetail: z.object({
     flatNumber: z.string().optional(),
     buildingName: z.string().optional(),

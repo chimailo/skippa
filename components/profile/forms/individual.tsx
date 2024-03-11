@@ -138,33 +138,33 @@ export default function IndividualForm({ token, data, user }: Props) {
     }
   }, [bnks]);
 
-  useEffect(() => {
-    const image = business.contactInformation?.person.image || "";
-    const vp = business.documents;
+  // useEffect(() => {
+  //   const image = business.contactInformation?.person.image || "";
+  //   const vp = business.documents;
 
-    setPassport({
-      url: image,
-    });
+  //   setPassport({
+  //     url: image,
+  //   });
 
-    if (vp.length) {
-      const papers = vp.map((paper: any) => {
-        return {
-          url: paper.vehiclePaperImages || "",
-          type: paper.type,
-          name: paper.name,
-        };
-      });
-      setVPapers(papers);
-      const papersUrl = papers.map((paper: any) => ({
-        vehiclePaperImages: paper.url,
-        type: "image",
-        name: paper.name,
-      }));
+  //   if (vp.length) {
+  //     const papers = vp.map((paper: any) => {
+  //       return {
+  //         url: paper.vehiclePaperImages || "",
+  //         type: paper.type,
+  //         name: paper.name,
+  //       };
+  //     });
+  //     setVPapers(papers);
+  //     const papersUrl = papers.map((paper: any) => ({
+  //       vehiclePaperImages: paper.url,
+  //       type: "image",
+  //       name: paper.name,
+  //     }));
 
-      form.setValue("image", image);
-      form.setValue("vehiclePapers", papersUrl);
-    }
-  }, []);
+  //     form.setValue("image", image);
+  //     form.setValue("vehiclePapers", papersUrl);
+  //   }
+  // }, []);
 
   useEffect(() => {
     if (res) {
@@ -275,10 +275,11 @@ export default function IndividualForm({ token, data, user }: Props) {
       setVPapers(papers);
       // localStorage.setItem("vPapers", JSON.stringify(papers));
       const papersUrl = papers.map((paper) => ({
-        vehiclePaperImages: paper.url,
-        name: paper.name,
+        vehiclePaperImages: paper.url as string,
+        name: paper.name as string,
         type: "Vehicle Paper",
       }));
+      // @ts-ignore
       form.setValue("vehiclePapers", papersUrl, {
         shouldValidate: true,
       });
@@ -300,6 +301,15 @@ export default function IndividualForm({ token, data, user }: Props) {
   const removePaper = async (paper: Record<string, string>) => {
     const vpapersArr = vPapers.filter((vp) => paper.name !== vp.name);
     setVPapers(vpapersArr);
+    const papersUrl = vpapersArr.map((paper) => ({
+      vehiclePaperImages: paper.url as string,
+      name: paper.name as string,
+      type: "Vehicle Paper",
+    }));
+    // @ts-ignore
+    form.setValue("vehiclePapers", papersUrl, {
+      shouldValidate: true,
+    });
   };
 
   async function handleSubmit(formData: FormDataType) {
@@ -313,12 +323,24 @@ export default function IndividualForm({ token, data, user }: Props) {
       truck: deliveryCategory.includes("truck"),
     };
 
+    const guarantor = data.business.guarantorDetails.length
+      ? data.business.guarantorDetails[
+          data.business.guarantorDetails.length - 1
+        ]
+      : null;
+
+    const guarantorDetail = {
+      firstName: guarantor?.firstName || "",
+      lastName: guarantor?.lastName || "",
+      email: guarantor?.email || "",
+    };
+
     try {
       const res = await $api({
         method: "post",
         headers: { Authorization: `Bearer ${token}` },
         url: "/merchants/individual/account/verification",
-        data: { ...rest, deliveryCategory: category },
+        data: { ...rest, deliveryCategory: category, guarantorDetail },
       });
       const status = res.data.status;
       const verificationCount = res.data.verificationChecks;
@@ -407,7 +429,7 @@ export default function IndividualForm({ token, data, user }: Props) {
                         <FormLabel
                           key={i}
                           htmlFor={paper.name}
-                          className="transition-colors block h-12 w-24 hover:border-gray-200 hover:border-2 rounded-md text-center px-2 py-1 relative"
+                          className="transition-colors block h-12 w-24 border-gray-200 border-2 rounded-md text-center px-2 py-1 relative"
                         >
                           <FormControl>
                             <input
@@ -563,10 +585,15 @@ export default function IndividualForm({ token, data, user }: Props) {
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormLabel className="after:text-red-600 after:text-xl after:content-['*'] after:ml-0.5">
-                  Bank Accont No.
+                  Bank Account No.
                 </FormLabel>
                 <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
+                  <Input
+                    {...field}
+                    disabled={!isEditing}
+                    type="number"
+                    inputMode="numeric"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

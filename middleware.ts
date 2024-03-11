@@ -13,17 +13,14 @@ export async function middleware(request: NextRequest, response: NextResponse) {
   if (!session.isLoggedIn) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  console.log("path: ", request.nextUrl.pathname.includes("/onboarding"));
-  console.log("verification count: ", session.user?.verificationCount);
-  console.log("user type: ", session.user?.type);
 
-  if (
-    !request.nextUrl.pathname.includes("/onboarding") &&
-    !session.user?.verificationCount &&
-    session.user?.type !== "admin"
-  ) {
-    return NextResponse.redirect(new URL("/onboarding", request.url));
-  }
+  // if (
+  //   !request.nextUrl.pathname.includes("/onboarding") &&
+  //   !session.user?.verificationCount &&
+  //   session.user?.type !== "admin"
+  // ) {
+  //   return NextResponse.redirect(new URL("/onboarding", request.url));
+  // }
 
   // Prevent admin from accessing the `/profile/*` pages
   if (

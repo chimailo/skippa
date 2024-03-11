@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import Container from "@/components/container";
@@ -8,6 +9,8 @@ import WhySkippa from "@/components/whyskippa";
 import Logo from "@/components/svg/logo";
 import RadioButton from "@/components/radioButton";
 import { Drawer } from "@/components/drawer";
+import AppleLogo from "@/public/apple.svg";
+import PlaystoreLogo from "@/public/playstore.svg";
 
 export default function BusinessTypeForm() {
   const [view, setView] = useState("customers");
@@ -96,14 +99,20 @@ export default function BusinessTypeForm() {
               href="#"
               target="_blank"
               rel="noreferrer noopener"
-              className="h-8 w-64 block bg-gray-200 rounded-md"
-            ></a>
+              className="py-2 justify-center w-64 text-white gap-2.5 rounded-md font-bold flex bg-[#272E2D] items-center"
+            >
+              <Image src={AppleLogo} alt="Apple logo" />
+              Get it on iPhone
+            </a>
             <a
               href="#"
               target="_blank"
               rel="noreferrer noopener"
-              className="h-8 w-64 block bg-gray-200 rounded-md"
-            ></a>
+              className="py-2 justify-center w-64 text-white gap-2.5 rounded-md font-bold flex bg-[#272E2D] items-center"
+            >
+              <Image src={PlaystoreLogo} alt="Playstore logo" />
+              Get it on Android
+            </a>
           </div>
         </Container>
         <WhySkippa />

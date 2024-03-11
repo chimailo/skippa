@@ -146,7 +146,7 @@ export default function BusinessForm({ token, data, user }: Props) {
   }, [bnks]);
 
   useEffect(() => {
-    const image = business?.contactInformation?.director.image || "";
+    // const image = business?.contactInformation?.director.image || "";
 
     const soc = {
       twitter: business?.contactInformation?.general.twitter || "",
@@ -169,7 +169,7 @@ export default function BusinessForm({ token, data, user }: Props) {
 
     const sMediaCount = Object.keys(sMedia).length;
 
-    setPassport({ url: image });
+    // setPassport({ url: image });
     setSocialMedia(sMedia);
     setSocialMediaFormCount(sMediaCount || 1);
   }, []);
@@ -728,7 +728,11 @@ export default function BusinessForm({ token, data, user }: Props) {
                   Bank Account No.
                 </FormLabel>
                 <FormControl>
-                  <Input type="text" {...field} disabled={!isEditing} />
+                  <Input
+                    disabled={!isEditing}
+                    type="number"
+                    inputMode="numeric"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

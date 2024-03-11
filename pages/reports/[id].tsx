@@ -140,7 +140,7 @@ export default function Reports({
               </div>
             )}
             <div className="flex-1 text-sm space-y-3">
-              <h4 className="font-bold">Order{order?.id}</h4>
+              <h4 className="font-bold">Order {order?.trackingId}</h4>
               <p className="font-semibold">
                 Delivery Fee:
                 <span className="ml-1 font-normal">

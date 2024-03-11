@@ -232,6 +232,7 @@ export default function Onboarding({
               >
                 {page === 1 ? (
                   <IndividualVerificationForm1
+                    // @ts-ignore
                     form={ivForm}
                     passport={passport}
                     vPapers={vPapers}
@@ -239,6 +240,7 @@ export default function Onboarding({
                     setVPapers={setVPapers}
                   />
                 ) : (
+                  // @ts-ignore
                   <IndividualVerificationForm2 form={ivForm} />
                 )}
                 <div className="my-4 flex justify-between items-center flex-row-reverse">

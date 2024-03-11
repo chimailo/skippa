@@ -28,9 +28,9 @@ export const Drawer = () => {
         <nav className="mt-16">
           <Link
             href="/faqs"
-            className="p-4 sm:px-6 my-4 capitalize leading-none transition-colors block font-semibold"
+            className="p-4 sm:px-6 my-4 leading-none transition-colors block font-semibold"
           >
-            faq
+            FAQs
           </Link>
           <Link
             href="/about"
@@ -57,7 +57,7 @@ export const Drawer = () => {
             asChild
             className="font-bold gap-2 hover:bg-teal-600 block text-center my-6"
           >
-            <Link href="/signup">Sign Up as a Partner</Link>
+            <Link href="/select-business-type">Sign Up as a Partner</Link>
           </Button>
         </div>
       </SheetContent>
