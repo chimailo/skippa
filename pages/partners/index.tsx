@@ -15,7 +15,7 @@ import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 import { sessionOptions } from "@/lib/session";
 import $api from "@/lib/axios";
-import { splitCamelCaseText } from "@/lib/utils";
+import { isObjectEmpty, splitCamelCaseText } from "@/lib/utils";
 import useSession from "@/hooks/session";
 import { SessionData } from "@/types";
 import useUser from "@/hooks/user";
@@ -222,6 +222,11 @@ export default function Partners({
     }
   };
 
+  const isFiltersApplied = () => {
+    const filters = getFilters();
+    return !isObjectEmpty(filters);
+  };
+
   const noDataMessage = () => {
     const filters = getFilters();
     const hasFilters = Object.keys(filters).length > 0;
@@ -269,8 +274,10 @@ export default function Partners({
                   />
                 )}
               </>
+            ) : search || isFiltersApplied() ? (
+              <NoData message="Looks like we couldn't find any matches for your search" />
             ) : (
-              <NoData message={noDataMessage()} />
+              <NoData message="There is currently no partner" />
             )}
           </>
         </div>
