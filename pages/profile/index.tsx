@@ -81,23 +81,5 @@ export const getServerSideProps = (async (context) => {
     sessionOptions
   );
 
-  if (!session.isLoggedIn) {
-    return {
-      redirect: {
-        destination: `/login`,
-        permanent: false,
-      },
-    };
-  }
-
-  if (!session.user?.verificationCount && session.user?.type !== "admin") {
-    return {
-      redirect: {
-        destination: `/onboarding`,
-        permanent: false,
-      },
-    };
-  }
-
   return { props: { session } };
 }) satisfies GetServerSideProps<{ session: SessionData }>;

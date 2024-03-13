@@ -74,12 +74,7 @@ export default function LoginForm() {
     try {
       const res = await signIn(formData);
       form.reset();
-
-      // @ts-ignore
-      const checks = res.data.verificationChecks;
-      const to = checks ? `${redirectTo || "/profile"}` : "/onboarding";
-      console.log(to);
-      router.push(to);
+      router.push(redirectTo || "/profile");
     } catch (error: any) {
       if (error.name === "AccountVerificationError") {
         toast({

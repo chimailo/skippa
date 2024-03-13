@@ -328,7 +328,7 @@ export const getServerSideProps = (async (context) => {
     sessionOptions
   );
 
-  if (!session.isLoggedIn || session.user?.type === "individual") {
+  if (session.user?.type === "individual") {
     return {
       redirect: {
         destination: `/login`,

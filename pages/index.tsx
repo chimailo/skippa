@@ -12,7 +12,7 @@ import { Drawer } from "@/components/drawer";
 import AppleLogo from "@/public/apple.svg";
 import PlaystoreLogo from "@/public/playstore.svg";
 
-export default function BusinessTypeForm() {
+export default function Home() {
   const [view, setView] = useState("customers");
 
   return (

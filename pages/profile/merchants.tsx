@@ -87,14 +87,5 @@ export const getServerSideProps = (async (context) => {
     sessionOptions
   );
 
-  if (!session.isLoggedIn) {
-    return {
-      redirect: {
-        destination: `/login`,
-        permanent: false,
-      },
-    };
-  }
-
   return { props: { session } };
 }) satisfies GetServerSideProps<{ session: SessionData }>;

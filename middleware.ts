@@ -14,13 +14,13 @@ export async function middleware(request: NextRequest, response: NextResponse) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // if (
-  //   !request.nextUrl.pathname.includes("/onboarding") &&
-  //   !session.user?.verificationCount &&
-  //   session.user?.type !== "admin"
-  // ) {
-  //   return NextResponse.redirect(new URL("/onboarding", request.url));
-  // }
+  if (
+    !request.nextUrl.pathname.includes("/onboarding") &&
+    !session.user?.verificationCount &&
+    (session.user?.type === "business" || session.user?.type === "individual")
+  ) {
+    return NextResponse.redirect(new URL("/onboarding", request.url));
+  }
 
   // Prevent admin from accessing the `/profile/*` pages
   if (
@@ -37,12 +37,6 @@ export async function middleware(request: NextRequest, response: NextResponse) {
   ) {
     return NextResponse.redirect(new URL("/profile", request.url));
   }
-
-  // Prevent user who is not activated or an admin from
-  // accessing any other pages apart from /help and /profile
-  // if (session.user?.type !== "admin" || session.user?.status !== 'activated') {
-  //   return NextResponse.redirect(new URL("/profile", request.url));
-  // }
 }
 
 export const config = {

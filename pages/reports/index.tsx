@@ -292,11 +292,9 @@ export const getServerSideProps = (async (context) => {
     context.res,
     sessionOptions
   );
-  if (
-    !session.isLoggedIn ||
-    // @ts-expect-error
-    !session.user?.role.permissions.includes("reports:view")
-  ) {
+
+  // @ts-expect-error
+  if (!session.user?.role.permissions.includes("reports:view")) {
     return {
       redirect: {
         destination: `/login`,

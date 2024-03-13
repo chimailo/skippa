@@ -40,6 +40,7 @@ export default function Onboarding({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [page, setPage] = useState(1);
   const [socialMedia, setSocialMedia] = useState<Record<string, SocMedia>>({});
+  const [socialMediaFormCount, setSocialMediaFormCount] = useState(1);
   const [passport, setPassport] = useState<Record<string, string>>({});
   const [vPapers, setVPapers] = useState<Record<string, string>[]>([]);
 
@@ -174,6 +175,8 @@ export default function Onboarding({
                     form={bvForm}
                     setSocMedia={setSocialMedia}
                     socMedia={socialMedia}
+                    socialMediaFormCount={socialMediaFormCount}
+                    setSocialMediaFormCount={setSocialMediaFormCount}
                   />
                 )}
                 <div className="my-4 flex justify-between items-center flex-row-reverse">

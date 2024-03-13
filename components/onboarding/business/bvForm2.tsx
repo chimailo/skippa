@@ -74,6 +74,8 @@ type Props = {
   form: FormDataType;
   setSocMedia: React.Dispatch<React.SetStateAction<Record<string, SocMedia>>>;
   socMedia: Record<string, SocMedia>;
+  setSocialMediaFormCount: React.Dispatch<React.SetStateAction<number>>;
+  socialMediaFormCount: number;
 };
 
 const CATEGORIES = ["motorcycle", "car", "van", "truck"];
@@ -81,9 +83,10 @@ const CATEGORIES = ["motorcycle", "car", "van", "truck"];
 export default function BusinessVerificationForm2({
   form,
   socMedia,
+  socialMediaFormCount,
   setSocMedia,
+  setSocialMediaFormCount,
 }: Props) {
-  const [socialMediaFormCount, setSocialMediaFormCount] = useState(1);
   const [states, setStates] = useState([]);
   const [banks, setBanks] = useState([]);
   const [countries, setCountries] = useState([]);
@@ -107,7 +110,6 @@ export default function BusinessVerificationForm2({
 
   useEffect(() => {
     if (bnks) {
-      console.log(bnks);
       const b = bnks.data;
 
       setBanks(b);
@@ -195,6 +197,7 @@ export default function BusinessVerificationForm2({
                   <>
                     <FormItem>
                       <Select
+                        value={socMedia[k]?.name || ""}
                         onValueChange={(e) =>
                           setSocMedia({
                             ...socMedia,
@@ -204,7 +207,6 @@ export default function BusinessVerificationForm2({
                             },
                           })
                         }
-                        defaultValue=""
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -229,6 +231,7 @@ export default function BusinessVerificationForm2({
                     <FormControl>
                       <Input
                         type="text"
+                        value={socMedia[k]?.handle || ""}
                         onChange={(e) =>
                           setSocMedia({
                             ...socMedia,

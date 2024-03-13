@@ -1,13 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 
@@ -48,8 +40,8 @@ export const Drawer = () => {
         <div className="my-8 space-y-5">
           <Button
             asChild
-            variant="ghost"
-            className="text-primary font-bold gap-2 hover:text-primary block text-center my-6 bg-zinc-100"
+            variant="outline"
+            className="text-primary font-bold gap-2 hover:bg-primary hover:text-white border-primary block text-center my-6"
           >
             <Link href="/login">Log In</Link>
           </Button>
