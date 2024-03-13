@@ -14,6 +14,13 @@ export async function middleware(request: NextRequest, response: NextResponse) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  const { type, verificationCount } = session.user!;
+
+  console.log("**************", request.nextUrl.pathname, "***************");
+  console.log(!request.nextUrl.pathname.includes("/onboarding"));
+  console.log(!verificationCount);
+  console.log(type === "business" || type === "individual");
+
   if (
     !request.nextUrl.pathname.includes("/onboarding") &&
     !session.user?.verificationCount &&
